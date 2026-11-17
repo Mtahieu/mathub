@@ -1,0 +1,11 @@
+{
+  "name": "mathub",
+  "private": true,
+  "type": "module",
+  "description": "Mathub – persönlicher Hub als PWA. Daten bleiben lokal auf dem Gerät.",
+  "scripts": {
+    "check": "node tools/check.mjs",
+    "serve": "python3 -m http.server 8000",
+    "bump": "node tools/bump-version.mjs"
+  }
+}
