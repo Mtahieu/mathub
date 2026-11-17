@@ -51,7 +51,7 @@ Aktuelle Typen:
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
 | `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |
-| `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras}` – Slot `{r: rezeptId|'kantine', rest?, locked?}` |
+| `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
 | `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |

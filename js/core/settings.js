@@ -22,6 +22,12 @@ export const DEFAULT_SETTINGS = {
       preferFav: true,          // gut bewertete Rezepte bevorzugen
       canteenKcal: 850,         // Schätzung Salatbowl + Dessert
       canteenProtein: 28,
+      fasting: true,            // Intervallfasten: kein Frühstück im Plan
+      equipment: ['herd', 'ofen', 'airfryer'],
+      preferAirfryer: true,
+      outDays: [],              // Wochentage (0 = Mo), an denen abends regelmäßig auswärts gegessen wird
+      outKcal: 1000,            // Schätzung Restaurant-Mahlzeit
+      outProtein: 35,
     },
   },
   backup: { lastAt: null, remindDays: 14 },

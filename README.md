@@ -24,7 +24,7 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.5)
+## Funktionen (Version 0.6)
 
 | Bereich | Was du machen kannst |
 |---|---|
@@ -32,7 +32,7 @@ Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die D
 | **Training** | Übungen (Physio, Kraft, Mobilität, Cardio) mit Sätzen/Wiederholungen/Gewicht oder Zeit, Beschwerden 0–10, Wochenplan, Vorlagen |
 | **Physio-Katalog** | Übungen für die Hüfte nach FAI-OP mit Anleitung, Filtern und Sterne-Bewertung |
 | **Erinnerungen** | Push um 7:30 und 20:30 Uhr mit deinen offenen Tageszielen |
-| **Ernährung** | Rezepte mit Bildern & vielen Filtern (inkl. vegan), Wochenplan mit Kantine an Bürotagen, Einkaufsliste – alles ohne Eingeben, Kalorien geschätzt |
+| **Ernährung** | Rezepte mit Bildern & vielen Filtern (vegan, Heißluftfritteuse …), Wochenplan für Intervallfasten mit Kantine an Bürotagen und Auswärts-Essen, variable Einkaufsliste – ohne Eingeben, Kalorien geschätzt |
 | **Schlaf** | Stunden & Qualität der letzten Nacht |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |

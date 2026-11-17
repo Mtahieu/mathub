@@ -422,6 +422,50 @@ export const RECIPES = [
     steps: ['Blumenkohl in Röschen mit Kichererbsen, Öl und Gewürzen 25 Min. bei 210 °C rösten.', 'Bulgur kochen.', 'Mit Rucola und Hummus anrichten, Zitrone darüber.'],
   },
 
+  // ---------- Heißluftfritteuse ----------
+  {
+    id: 'af-suesskartoffel-tofu', name: 'Süßkartoffel-Pommes mit Knuspertofu & Knoblauch-Dip', emoji: '🍟', hue: 22,
+    meals: ['mittag', 'abend'], diet: 'vegan', time: 30, cuisine: 'international', tags: [],
+    ing: [['suesskartoffel', 300], ['tofu', 200], ['sojajoghurt', 100], ['knoblauch', 4], ['rapsoel', 10]],
+    spice: 'Paprikapulver (geräuchert), Speisestärke (1 EL), Salz, Pfeffer',
+    steps: ['Süßkartoffel in Stifte schneiden, mit der Hälfte des Öls und Paprika mischen.', 'Tofu würfeln, mit Stärke, Salz und restlichem Öl mischen.', 'Pommes 18–20 Min. bei 200 °C in der Heißluftfritteuse, nach 10 Min. schütteln; Tofu die letzten 10 Min. dazugeben.', 'Sojajoghurt mit gepresstem Knoblauch und Salz verrühren.'],
+  },
+  {
+    id: 'af-falafel-bowl', name: 'Falafel-Bowl aus der Heißluftfritteuse', emoji: '🧆', hue: 70,
+    meals: ['mittag', 'abend'], diet: 'vegan', time: 35, cuisine: 'orientalisch', tags: ['mealprep'],
+    ing: [['kichererbsen', 200], ['haferflocken', 20], ['zwiebel', 40], ['knoblauch', 4], ['bulgur', 60], ['gurke', 100], ['tomaten', 100], ['tahini', 15], ['zitrone', 10]],
+    spice: 'Kreuzkümmel, Koriander, Petersilie, Salz',
+    steps: ['Kichererbsen, Haferflocken, Zwiebel, Knoblauch, Kräuter und Gewürze im Mixer grob pürieren.', '8 kleine Bällchen formen, leicht flach drücken, mit wenig Öl besprühen.', '14–16 Min. bei 190 °C in der Heißluftfritteuse, nach der Hälfte wenden.', 'Bulgur kochen, mit Gurke und Tomate anrichten, Tahini-Zitronen-Sauce darüber.'],
+  },
+  {
+    id: 'af-haehnchen-kartoffeln', name: 'Knusper-Hähnchen mit Kartoffeln & Gemüse', emoji: '🍗', hue: 35,
+    meals: ['mittag', 'abend'], diet: 'fleisch', time: 30, cuisine: 'deutsch', tags: [],
+    ing: [['haehnchen', 180], ['kartoffeln', 250], ['zucchini', 150], ['paprika', 150], ['rapsoel', 10]],
+    spice: 'Paprikapulver, Knoblauchpulver, Rosmarin, Salz',
+    steps: ['Kartoffeln würfeln, mit der Hälfte des Öls und Gewürzen mischen, 10 Min. bei 200 °C vorgaren.', 'Hähnchen und Gemüse würzen, dazugeben.', 'Weitere 12–15 Min. garen, zwischendurch schütteln, bis das Hähnchen durch ist.'],
+  },
+  {
+    id: 'af-lachs-brokkoli', name: 'Zitronen-Lachs mit Brokkoli & Drillingen', emoji: '🐟', hue: 195,
+    meals: ['abend'], diet: 'pesc', time: 25, cuisine: 'mediterran', tags: [],
+    ing: [['lachs', 150], ['brokkoli', 200], ['kartoffeln', 250], ['zitrone', 15], ['olivenoel', 5]],
+    spice: 'Dill, Knoblauch, Salz, Pfeffer',
+    steps: ['Halbierte Kartoffeln mit Öl und Salz 12 Min. bei 200 °C garen.', 'Lachs mit Zitrone und Dill würzen, mit dem Brokkoli dazulegen.', '10–12 Min. bei 180 °C fertig garen.'],
+  },
+  {
+    id: 'af-blumenkohl-wings', name: 'Blumenkohl-Wings mit Hummus & Couscous', emoji: '🥦', hue: 45,
+    meals: ['mittag', 'abend'], diet: 'vegan', time: 30, cuisine: 'international', tags: [],
+    ing: [['blumenkohl', 300], ['sojadrink', 50], ['haferflocken', 30], ['kichererbsen', 100], ['hummus', 50], ['couscous', 60]],
+    spice: 'Paprikapulver, Knoblauchpulver, Chili, Salz',
+    steps: ['Haferflocken fein mahlen und mit Gewürzen mischen.', 'Blumenkohlröschen durch den Sojadrink ziehen und in der Mischung wälzen.', 'Mit den Kichererbsen 16–18 Min. bei 200 °C in der Heißluftfritteuse, nach der Hälfte schütteln.', 'Couscous mit kochendem Wasser quellen lassen, mit Hummus servieren.'],
+  },
+  {
+    id: 'af-kichererbsen-snack', name: 'Knusper-Kichererbsen', emoji: '🫘', hue: 38,
+    meals: ['snack'], diet: 'vegan', time: 15, cuisine: 'international', tags: ['guenstig', 'mealprep'],
+    ing: [['kichererbsen', 150], ['rapsoel', 5]],
+    spice: 'Paprikapulver, Salz (oder Zimt & Ahornsirup für süß)',
+    steps: ['Kichererbsen abspülen und gut trocken tupfen.', 'Mit Öl und Gewürzen mischen.', '12–15 Min. bei 200 °C in der Heißluftfritteuse, mehrmals schütteln.'],
+  },
+
   // ---------- Snacks & Desserts ----------
   {
     id: 'protein-shake', name: 'Schoko-Bananen-Proteinshake', emoji: '🥤', hue: 25,
@@ -475,7 +519,49 @@ export const RECIPES = [
   },
 ];
 
-// ---------- Kantine (Schätzwerte) ----------
+// ---------- Küchengeräte ----------
+// eq: benötigte Geräte (herd | ofen | airfryer, leer = ohne Kochen) · af: Variante für die Heißluftfritteuse
+export const EQUIPMENT = { herd: 'Herd', ofen: 'Backofen', airfryer: 'Heißluftfritteuse' };
+const EQ = {
+  'overnight-oats-protein': [], 'skyr-bowl': [], 'tofu-ruehrei': ['herd'], 'ruehrei-brot': ['herd'], 'pb-porridge': ['herd'],
+  'quark-apfel': [], 'protein-pancakes': ['herd'], 'smoothie-bowl': [], 'avocado-toast': [], 'chia-pudding': [],
+  'linsen-dal': ['herd'], 'chili-sin-carne': ['herd'], 'chili-con-carne': ['herd'], 'linsen-bolognese': ['herd'],
+  'pasta-putenhack': ['herd'], 'kichererbsen-curry': ['herd'], 'thunfisch-salat': [], 'griech-couscous': ['herd'],
+  'linsensuppe': ['herd'], 'shakshuka': ['herd'], 'erdnuss-tofu-nudeln': ['herd'], 'garnelen-pasta': ['herd'],
+  'burrito-bowl': ['herd'], 'kuerbissuppe': ['herd'], 'edamame-nudelsalat': ['herd'], 'pilzrisotto': ['herd'],
+  'kartoffel-quark': ['herd'], 'miso-nudelsuppe': ['herd'], 'tempeh-bowl': ['herd'], 'aubergine-curry': ['herd'],
+  'protein-shake': [], 'hummus-sticks': [], 'schoko-quark': [], 'energy-balls': [], 'edamame-snack': ['herd'],
+  'apfel-erdnuss': [], 'sojajoghurt-nuss': [], 'huettenkaese-snack': [],
+  'tofu-brokkoli': ['herd'], 'haehnchen-pfanne': ['herd'], 'lachs-ofenkartoffeln': ['ofen'], 'ofengemuese-tempeh': ['ofen'],
+  'buddha-bowl': ['herd'], 'seitan-gyros': ['herd'], 'haehnchen-wrap': ['herd'], 'gnocchi-spinat': ['herd'],
+  'ofen-suesskartoffel': ['ofen'], 'haehnchen-bulgur': ['herd'], 'raeuchertofu-kartoffeln': ['herd'],
+  'gefuellte-paprika': ['ofen'], 'blumenkohl-bowl': ['ofen'],
+  'af-suesskartoffel-tofu': ['airfryer'], 'af-falafel-bowl': ['airfryer', 'herd'], 'af-haehnchen-kartoffeln': ['airfryer'],
+  'af-lachs-brokkoli': ['airfryer'], 'af-blumenkohl-wings': ['airfryer', 'herd'], 'af-kichererbsen-snack': ['airfryer'],
+};
+const AF = {
+  'tofu-brokkoli': 'Tofuwürfel mit Stärke und 1 TL Öl 12–15 Min. bei 200 °C knusprig machen, Brokkoli & Paprika die letzten 6 Min. dazu – dann nur noch mit der Sauce mischen.',
+  'haehnchen-pfanne': 'Hähnchenstreifen und Gemüse mit 1 TL Öl 14–16 Min. bei 190 °C, nach der Hälfte schütteln.',
+  'lachs-ofenkartoffeln': 'Kartoffelspalten 15 Min. bei 200 °C, dann Lachs und Brokkoli dazu und 10–12 Min. bei 180 °C.',
+  'ofengemuese-tempeh': 'In zwei Durchgängen je 15–18 Min. bei 190 °C, nach der Hälfte schütteln.',
+  'buddha-bowl': 'Kichererbsen mit Paprikapulver 12 Min. bei 200 °C knusprig rösten.',
+  'seitan-gyros': 'Seitanstreifen mit Gewürz und 1 TL Öl 8–10 Min. bei 200 °C.',
+  'haehnchen-wrap': 'Gewürzte Hähnchenbrust 12–14 Min. bei 190 °C, dann aufschneiden.',
+  'gnocchi-spinat': 'Gnocchi mit 1 TL Öl 12–14 Min. bei 200 °C knusprig – dann kurz mit Spinat, Bohnen & Tomaten in der Pfanne mischen.',
+  'ofen-suesskartoffel': 'Süßkartoffel längs halbieren, 25–30 Min. bei 190 °C.',
+  'haehnchen-bulgur': 'Hähnchen mit Oregano 12–14 Min. bei 190 °C.',
+  'raeuchertofu-kartoffeln': 'Gekochte Kartoffelwürfel 15 Min. bei 200 °C, Räuchertofu & Paprika die letzten 6 Min. – Spinat danach unterheben.',
+  'gefuellte-paprika': 'Gefüllte Paprikahälften 15–18 Min. bei 180 °C (ohne Tomatensauce, die separat erwärmen).',
+  'blumenkohl-bowl': 'Blumenkohl und Kichererbsen 15–18 Min. bei 200 °C, zweimal schütteln.',
+  'edamame-snack': 'Aufgetaute Edamame mit etwas Öl und Salz 8 Min. bei 200 °C rösten.',
+  'protein-pancakes': null,
+};
+
+// ---------- Kantine & auswärts (Schätzwerte) ----------
+export const EATING_OUT = {
+  id: 'auswaerts', name: 'Auswärts essen', emoji: '🍽️', hue: 260,
+  note: 'Schätzung für ein Restaurant-Essen: ≈ 1.000 kcal / 35 g Protein (anpassbar).',
+};
 export const CANTEEN = {
   id: 'kantine', name: 'Kantine: Salatbowl + Dessert', emoji: '🥗', hue: 135, sides: ['🍮'],
   note: 'Schätzung: Salatbowl mit Dressing ≈ 550 kcal / 22 g Protein, Dessert ≈ 300 kcal / 6 g Protein.',
@@ -503,20 +589,29 @@ export const CUISINES = {
 };
 export const TAGS = {
   highprotein: 'High Protein', schnell: 'Schnell', mealprep: 'Meal-Prep', guenstig: 'Günstig',
-  ohnekochen: 'Ohne Kochen', onepot: 'One-Pot', kalt: 'Kalt / zum Mitnehmen', leicht: 'Leicht',
+  ohnekochen: 'Ohne Kochen', onepot: 'One-Pot', kalt: 'Kalt / zum Mitnehmen', leicht: 'Leicht', airfryer: 'Heißluftfritteuse',
 };
 
 // Abgeleitete Felder einmalig berechnen
 for (const r of RECIPES) {
+  r.eq = EQ[r.id] ?? ['herd'];
+  r.af = AF[r.id] || null;
   r.nut = nutrition(r);
   const auto = [];
   if (r.nut.p >= 30) auto.push('highprotein');
   if (r.time <= 15) auto.push('schnell');
   if (r.nut.kcal <= 450 && !r.meals.includes('snack')) auto.push('leicht');
+  if (r.eq.includes('airfryer') || r.af) auto.push('airfryer');
+  if (!r.eq.length) auto.push('ohnekochen');
   r.allTags = [...new Set([...r.tags, ...auto])];
 }
 
 export const recipeById = (id) => RECIPES.find((r) => r.id === id) || null;
+
+/** Lässt sich das Rezept mit den vorhandenen Geräten kochen? (Backofen ist durch Heißluftfritteuse ersetzbar, wenn es eine Variante gibt.) */
+export function equipmentOk(r, available) {
+  return r.eq.every((e) => available.includes(e) || (e === 'ofen' && r.af && available.includes('airfryer')));
+}
 
 /** Menge für Anzeige: Stück, ml oder g. */
 export function formatAmount(id, grams, note) {

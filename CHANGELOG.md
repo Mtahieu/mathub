@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 – 2026-11-17
+
+- **Intervallfasten:** Der Wochenplan enthält standardmäßig kein Frühstück mehr; die Kalorien verteilen sich auf Mittag, Abend und bis zu 3 Snacks (abschaltbar in den Plan-Einstellungen).
+- **Küchengeräte:** Jedes Rezept kennt seine Geräte (Herd, Backofen, Heißluftfritteuse). 14 Rezepte haben eine Heißluftfritteusen-Variante, dazu 6 neue Rezepte speziell für die Heißluftfritteuse (jetzt 57 Rezepte). Neuer Filter „Küchengerät“; im Plan werden nur Rezepte mit vorhandenen Geräten genutzt, Heißluftfritteuse wird bevorzugt.
+- **Auswärts essen:** Jede Mahlzeit lässt sich als „auswärts“ markieren (Schätzung ≈ 1.000 kcal), dazu ein Schnellschalter „🍽️ auswärts“ pro Tag und optional feste Auswärts-Abende.
+- **Variable Einkaufsliste:** Tage auswählen, für die eingekauft wird (ab heute, ganze Woche, nur 2 Tage oder einzeln). Auswärts-Mahlzeiten und Kantine landen nie auf der Liste.
+- Snacks wiederholen sich im Wochenplan seltener.
+
 ## 0.5.0 – 2026-11-17
 
 - **Ernährung komplett neu – ohne manuelle Eingabe:** statt Mahlzeiten zu tracken gibt es jetzt

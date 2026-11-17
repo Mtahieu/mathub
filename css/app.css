@@ -541,3 +541,9 @@ details.measures[open] summary { margin-bottom: 10px; }
 .shop-amt { font-weight: 650; font-variant-numeric: tabular-nums; flex: none; color: var(--muted); }
 .shop-item.done .list-title { text-decoration: line-through; color: var(--faint); }
 .shop-item.done .shop-amt { color: var(--faint); }
+.out-toggle { appearance: none; border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 99px; font-size: .72rem; font-weight: 700; padding: 3px 9px; cursor: pointer; }
+.out-toggle.on { background: color-mix(in srgb, var(--c-mobil) 16%, transparent); border-color: var(--c-mobil); color: var(--c-mobil); }
+.meal-row.out { background: color-mix(in srgb, var(--c-mobil) 10%, var(--surface-2)); }
+.chip.faint:not(.active) { opacity: .5; }
+.li-emoji { font-size: 1.2rem; width: 24px; text-align: center; flex: none; }
+.af-tip { align-items: flex-start; }

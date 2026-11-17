@@ -4,7 +4,7 @@
 import { buildReminder, slotForHour } from './js/core/reminders.js';
 import { kv } from './js/core/db.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 const CACHE = `mathub-${VERSION}`;
 
 const PRECACHE = [

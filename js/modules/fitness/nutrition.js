@@ -3,7 +3,8 @@
 //
 // entries type 'mealplan' (1 pro Woche, date = Montag):
 //   data {days:{'0'..'6': {fruehstueck, mittag, abend: Slot|null, snack: Slot[]}}, checked:{zutat:true}, extras:[{r, n}], generatedAt}
-//   Slot = {r: rezeptId | 'kantine', rest?: true (Reste vom Vorabend), locked?: true}
+//   Slot = {r: rezeptId | 'kantine' | 'auswaerts', rest?: true (Reste vom Vorabend), locked?: true}
+//   shopDays: [0–6] Tage, für die eingekauft wird (fehlt = ab heute bzw. ganze Woche)
 // Einstellungen: settings.prefs.food (siehe DEFAULT_SETTINGS)
 // Ältere Einträge 'food' und items 'food-fav' (bis 0.4) bleiben in der DB, werden aber nicht mehr genutzt.
 
@@ -17,7 +18,8 @@ import {
 import { today, addDays, startOfWeek, weekday, formatDate, WEEKDAYS_SHORT, WEEKDAYS_LONG, dayRange, isKey } from '../../core/dates.js';
 import { barChart, bucketize } from '../../core/charts.js';
 import {
-  RECIPES, INGREDIENTS, CATEGORIES, CANTEEN, DIETS, MEALS, CUISINES, TAGS, dietFits, recipeById, formatAmount,
+  RECIPES, INGREDIENTS, CATEGORIES, CANTEEN, EATING_OUT, DIETS, MEALS, CUISINES, TAGS, EQUIPMENT, dietFits, recipeById,
+  formatAmount, equipmentOk,
 } from './food-data.js';
 import { loadRatings, rate, isFavorite, isDisliked } from './ratings.js';
 
@@ -49,6 +51,7 @@ async function savePlan(weekStart, data) {
 function slotNut(slot) {
   if (!slot) return null;
   if (slot.r === 'kantine') { const p = prefs(); return { kcal: p.canteenKcal, p: p.canteenProtein }; }
+  if (slot.r === 'auswaerts') { const p = prefs(); return { kcal: p.outKcal, p: p.outProtein }; }
   const r = recipeById(slot.r);
   return r ? { kcal: r.nut.kcal, p: r.nut.p } : null;
 }
@@ -74,7 +77,8 @@ function pickWeighted(list, weightFn) {
 }
 
 function candidates(slot, p, ratings, maxTime) {
-  const base = RECIPES.filter((r) => r.meals.includes(slot) && dietFits(r.diet, p.diet) && !isDisliked(ratings.get(rKey(r))));
+  const base = RECIPES.filter((r) => r.meals.includes(slot) && dietFits(r.diet, p.diet) && equipmentOk(r, p.equipment)
+    && !isDisliked(ratings.get(rKey(r))));
   const timed = base.filter((r) => r.time <= maxTime);
   return timed.length ? timed : base;
 }
@@ -83,6 +87,7 @@ function weightFor(r, ratings, used, p, extra = 1) {
   const rec = ratings.get(rKey(r));
   let w = 1 + (r.nut.p / Math.max(r.nut.kcal, 1)) * 10; // Protein-Dichte bevorzugen (Muskelaufbau)
   if (p.preferFav && rec) w *= rec.stars >= 4 ? 3 : rec.stars === 3 ? 1.3 : 1;
+  if (p.preferAirfryer && p.equipment.includes('airfryer') && r.allTags.includes('airfryer')) w *= 1.6;
   const n = used.get(r.id) || 0;
   w *= n ? 0.05 / n : 1;
   return w * extra;
@@ -92,6 +97,7 @@ function generateWeek(weekStart, p, ratings, existing) {
   const t = targets();
   const used = new Map();
   const use = (id) => used.set(id, (used.get(id) || 0) + 1);
+  const snackUsed = new Map();
   const days = {};
   // fixierte Mahlzeiten zuerst als "benutzt" zählen
   for (let d = 0; d < 7; d++) for (const k of SLOTS) {
@@ -106,20 +112,20 @@ function generateWeek(weekStart, p, ratings, existing) {
     const maxTime = weekend ? Math.max(p.maxTime, 45) : p.maxTime;
     const keep = (k) => (old[k]?.locked ? old[k] : null);
 
-    // Frühstück
-    day.fruehstueck = keep('fruehstueck') || (() => {
+    // Frühstück (entfällt bei Intervallfasten)
+    day.fruehstueck = keep('fruehstueck') || (p.fasting ? null : (() => {
       const prev = days[d - 1]?.fruehstueck?.r;
       const r = pickWeighted(candidates('fruehstueck', p, ratings, weekend ? 30 : Math.min(p.maxTime, 15)),
         (x) => weightFor(x, ratings, new Map(), p, x.id === prev ? 0.1 : 1));
       return r ? { r: r.id } : null;
-    })();
+    })());
 
     // Mittag: Kantine an Bürotagen, sonst Reste vom Vorabend oder schnelles Rezept
     if (keep('mittag')) day.mittag = keep('mittag');
     else if (!weekend && isOffice(date, p)) day.mittag = { r: 'kantine' };
     else {
       const prevDinner = recipeById(days[d - 1]?.abend?.r);
-      if (p.leftovers && prevDinner?.tags.includes('mealprep') && !days[d - 1]?.abend?.rest) {
+      if (p.leftovers && prevDinner?.tags.includes('mealprep') && !days[d - 1]?.abend?.rest && days[d - 1]?.abend?.r !== 'auswaerts') {
         day.mittag = { r: prevDinner.id, rest: true };
       } else {
         const r = pickWeighted(candidates('mittag', p, ratings, weekend ? maxTime : Math.min(maxTime, 30)), (x) => weightFor(x, ratings, used, p));
@@ -128,7 +134,7 @@ function generateWeek(weekStart, p, ratings, existing) {
     }
 
     // Abend: wenn morgen Remote/Wochenende ist, Meal-Prep bevorzugen (Reste fürs Mittagessen)
-    day.abend = keep('abend') || (() => {
+    day.abend = keep('abend') || (p.outDays.includes(d) ? { r: 'auswaerts', locked: true } : null) || (() => {
       const tomorrow = addDays(date, 1);
       const nextHome = d < 6 && !(weekday(tomorrow) < 5 && isOffice(tomorrow, p));
       const r = pickWeighted(candidates('abend', p, ratings, maxTime),
@@ -140,13 +146,14 @@ function generateWeek(weekStart, p, ratings, existing) {
     // Snacks auffüllen bis nahe am Kalorienziel
     if (old.snack?.some((s) => s.locked)) day.snack = old.snack.filter((s) => s.locked);
     if (p.autoSnacks) {
-      for (let i = day.snack.length; i < 2; i++) {
+      for (let i = day.snack.length; i < (p.fasting ? 3 : 2); i++) {
         const gap = t.kcal - dayTotals(day).kcal;
         if (gap < 220) break;
         const snacks = candidates('snack', p, ratings, 30).filter((x) => !day.snack.some((s) => s.r === x.id));
-        const ranked = snacks.sort((a, b) => Math.abs(a.nut.kcal - gap) - Math.abs(b.nut.kcal - gap)).slice(0, 4);
-        const r = pickWeighted(ranked, (x) => weightFor(x, ratings, new Map(), p));
+        const ranked = snacks.sort((a, b) => Math.abs(a.nut.kcal - gap) - Math.abs(b.nut.kcal - gap)).slice(0, 7);
+        const r = pickWeighted(ranked, (x) => weightFor(x, ratings, new Map(), p) / (1 + 2 * (snackUsed.get(x.id) || 0)));
         if (!r) break;
+        snackUsed.set(r.id, (snackUsed.get(r.id) || 0) + 1);
         day.snack.push({ r: r.id });
       }
     }
@@ -156,13 +163,18 @@ function generateWeek(weekStart, p, ratings, existing) {
 }
 
 // ---------- Einkaufsliste ----------
-function buildShopping(plan, p) {
+function buildShopping(plan, p, shopDays) {
   const portions = new Map(); // rezeptId -> Portionen
   const add = (id, n = 1) => portions.set(id, (portions.get(id) || 0) + n);
+  let out = 0;
   for (let d = 0; d < 7; d++) {
     const day = plan.days?.[d];
-    if (!day) continue;
-    for (const s of [...SLOTS.map((k) => day[k]), ...(day.snack || [])]) if (s && s.r !== 'kantine') add(s.r);
+    if (!day || !shopDays.includes(d)) continue;
+    for (const s of [...SLOTS.map((k) => day[k]), ...(day.snack || [])]) {
+      if (!s || s.r === 'kantine') continue;
+      if (s.r === 'auswaerts') { out++; continue; }
+      add(s.r);
+    }
   }
   for (const e of plan.extras || []) add(e.r, e.n || 1);
   const amounts = new Map();
@@ -188,7 +200,7 @@ function buildShopping(plan, p) {
     else groups.find((c) => c.id === z.cat).items.push(item);
   }
   for (const gr of groups) gr.items.sort((a, b) => a.name.localeCompare(b.name, 'de'));
-  return { groups: groups.filter((g) => g.items.length), pantry, spices: [...spices].sort((a, b) => a.localeCompare(b, 'de')), portions };
+  return { groups: groups.filter((g) => g.items.length), pantry, spices: [...spices].sort((a, b) => a.localeCompare(b, 'de')), portions, out };
 }
 
 function shoppingText(list, plan, weekStart) {
@@ -257,7 +269,8 @@ async function openRecipe(r, after) {
         r.meals.map((m) => h('span', { class: 'tag' }, MEALS[m])),
         r.allTags.map((t) => h('span', { class: 'tag' }, TAGS[t]))),
       nutRow(r.nut),
-      h('p', { class: 'muted small' }, 'Schätzwerte pro Portion.'),
+      h('p', { class: 'muted small' }, `Schätzwerte pro Portion · ${r.eq.length ? 'Geräte: ' + r.eq.map((e) => EQUIPMENT[e]).join(' + ') : 'ohne Kochen'}`),
+      r.af ? h('div', { class: 'banner small af-tip' }, h('span', { class: 'li-emoji' }, '🍟'), h('span', null, h('strong', null, 'Mit Heißluftfritteuse: '), r.af)) : null,
       h('div', { class: 'stepper' },
         h('button', { class: 'icon-btn', 'aria-label': 'Weniger', onclick: () => setP(portions - 1) }, icon('minus')),
         pLabel,
@@ -320,7 +333,7 @@ function openAddToPlan(r, after) {
 
 // ---------- Rezepte durchsuchen ----------
 const DEFAULT_FILTER = {
-  q: '', meal: 'alle', diet: 'alle', time: 0, kcal: 'alle', protein: 0, cuisines: [], tags: [], fav: false, hideDisliked: true, sort: 'empfohlen',
+  q: '', meal: 'alle', diet: 'alle', equip: 'alle', time: 0, kcal: 'alle', protein: 0, cuisines: [], tags: [], fav: false, hideDisliked: true, sort: 'empfohlen',
 };
 let filter = null;
 async function getFilter() {
@@ -328,7 +341,7 @@ async function getFilter() {
   return filter;
 }
 const saveFilter = () => kv.set('food:filter', filter);
-const activeFilterCount = (f) => ['meal', 'diet', 'kcal'].filter((k) => f[k] !== 'alle').length
+const activeFilterCount = (f) => ['meal', 'diet', 'kcal', 'equip'].filter((k) => f[k] !== 'alle').length
   + (f.time ? 1 : 0) + (f.protein ? 1 : 0) + f.cuisines.length + f.tags.length + (f.fav ? 1 : 0) + (f.q ? 1 : 0);
 
 function applyFilter(f, ratings) {
@@ -339,6 +352,10 @@ function applyFilter(f, ratings) {
     if (f.meal !== 'alle' && !r.meals.includes(f.meal)) return false;
     if (f.diet !== 'alle' && !dietFits(r.diet, f.diet)) return false;
     if (f.time && r.time > f.time) return false;
+    if (f.equip === 'airfryer' && !r.allTags.includes('airfryer')) return false;
+    if (f.equip === 'herd' && !(r.eq.length && r.eq.every((e) => e === 'herd'))) return false;
+    if (f.equip === 'ofen' && !r.eq.includes('ofen')) return false;
+    if (f.equip === 'keins' && r.eq.length) return false;
     if (!kcalOk(r.nut.kcal)) return false;
     if (f.protein && r.nut.p < f.protein) return false;
     if (f.cuisines.length && !f.cuisines.includes(r.cuisine)) return false;
@@ -394,12 +411,14 @@ async function renderRecipes(el, ctx) {
     chip('Ohne Fleisch', f.diet === 'pesc', () => set({ diet: f.diet === 'pesc' ? 'alle' : 'pesc' })),
     chip('★ Favoriten', f.fav, () => set({ fav: !f.fav })),
     chip('💪 ≥ 30 g Protein', f.protein === 30, () => set({ protein: f.protein === 30 ? 0 : 30 })),
+    chip('🍟 Heißluftfritteuse', f.equip === 'airfryer', () => set({ equip: f.equip === 'airfryer' ? 'alle' : 'airfryer' })),
     chip('⏱ ≤ 20 Min.', f.time === 20, () => set({ time: f.time === 20 ? 0 : 20 }))));
 
   const n = activeFilterCount(f);
   const more = h('details', { class: 'filter-panel', open: ctx.query.filter === '1' },
     h('summary', null, icon('settings', 18), `Alle Filter${n ? ` (${n} aktiv)` : ''}`),
     field('Zubereitungszeit', h('div', { class: 'chips' }, [[0, 'egal'], [10, '≤ 10'], [20, '≤ 20'], [30, '≤ 30'], [45, '≤ 45']].map(([v, l]) => chip(l + (v ? ' Min.' : ''), f.time === v, () => set({ time: v }))))),
+    field('Küchengerät', h('div', { class: 'chips' }, [['alle', 'egal'], ['airfryer', 'Heißluftfritteuse'], ['herd', 'Nur Herd'], ['ofen', 'Backofen'], ['keins', 'Ohne Kochen']].map(([v, l]) => chip(l, f.equip === v, () => set({ equip: v }))))),
     field('Kalorien pro Portion', h('div', { class: 'chips' }, [['alle', 'egal'], ['lt400', '< 400'], ['400-600', '400–600'], ['600-800', '600–800'], ['gt800', '> 800']].map(([v, l]) => chip(l, f.kcal === v, () => set({ kcal: v }))))),
     field('Protein mindestens', h('div', { class: 'chips' }, [[0, 'egal'], [20, '20 g'], [30, '30 g'], [40, '40 g']].map(([v, l]) => chip(l, f.protein === v, () => set({ protein: v }))))),
     field('Ernährung', h('div', { class: 'chips' }, [['alle', 'Alles'], ['pesc', 'Ohne Fleisch'], ['vegetarisch', 'Vegetarisch'], ['vegan', 'Vegan']].map(([v, l]) => chip(l, f.diet === v, () => set({ diet: v }))))),
@@ -427,22 +446,35 @@ async function renderRecipes(el, ctx) {
 // ---------- Wochenplan-Ansicht ----------
 function openPlanSettings(after) {
   const p = prefs();
-  const st = { ...p, officeDays: [...p.officeDays] };
+  const st = { ...p, officeDays: [...p.officeDays], equipment: [...p.equipment], outDays: [...p.outDays] };
   const box = h('div', { class: 'stack' });
   const kcalIn = intInput({ value: st.canteenKcal });
   const protIn = intInput({ value: st.canteenProtein });
+  const outKcalIn = intInput({ value: st.outKcal });
+  const outProtIn = intInput({ value: st.outProtein });
+  const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v].sort());
+  const cb = (label, key) => h('label', { class: 'checkbox' }, h('input', { type: 'checkbox', checked: st[key], onchange: (e) => { st[key] = e.target.checked; } }), h('span', null, label));
   const render = () => box.replaceChildren(
     field('Bürotage (Kantine mittags)', h('div', { class: 'chips' }, WEEKDAYS_SHORT.slice(0, 5).map((d, i) => h('button', {
       type: 'button', class: 'chip' + (st.officeDays.includes(i) ? ' active' : ''),
       onclick: () => { st.officeDays = st.officeDays.includes(i) ? st.officeDays.filter((x) => x !== i) : [...st.officeDays, i].sort(); render(); },
     }, d))), `${st.officeDays.length}× Büro, ${5 - st.officeDays.length}× Remote`),
+    cb('Intervallfasten – kein Frühstück einplanen', 'fasting'),
+    field('Küchengeräte zuhause', h('div', { class: 'chips' }, Object.entries(EQUIPMENT).map(([k, l]) => h('button', {
+      type: 'button', class: 'chip' + (st.equipment.includes(k) ? ' active' : ''), onclick: () => { st.equipment = toggle(st.equipment, k); render(); },
+    }, l))), 'Rezepte, die andere Geräte brauchen, kommen nicht in den Plan.'),
+    cb('Heißluftfritteuse bevorzugen', 'preferAirfryer'),
+    field('Abends regelmäßig auswärts', h('div', { class: 'chips' }, WEEKDAYS_SHORT.map((d, i) => h('button', {
+      type: 'button', class: 'chip' + (st.outDays.includes(i) ? ' active' : ''), onclick: () => { st.outDays = toggle(st.outDays, i); render(); },
+    }, d))), 'Wird beim Planen automatisch eingetragen. Spontan geht es pro Mahlzeit im Plan.'),
     field('Ernährung im Plan', segmented([{ value: 'alle', label: 'Alles' }, { value: 'pesc', label: 'Ohne Fleisch' }, { value: 'vegetarisch', label: 'Veggie' }, { value: 'vegan', label: 'Vegan' }], st.diet, (v) => { st.diet = v; })),
     field('Max. Kochzeit unter der Woche', segmented([15, 20, 30, 45, 60].map((v) => ({ value: v, label: `${v}′` })), st.maxTime, (v) => { st.maxTime = v; })),
     field('Personen (für die Einkaufsliste)', segmented([1, 2, 3, 4].map((v) => ({ value: v, label: String(v) })), st.servings, (v) => { st.servings = v; })),
-    h('label', { class: 'checkbox' }, h('input', { type: 'checkbox', checked: st.leftovers, onchange: (e) => { st.leftovers = e.target.checked; } }), h('span', null, 'Reste vom Vorabend fürs Remote-Mittagessen')),
-    h('label', { class: 'checkbox' }, h('input', { type: 'checkbox', checked: st.autoSnacks, onchange: (e) => { st.autoSnacks = e.target.checked; } }), h('span', null, 'Snacks automatisch bis zum Kalorienziel auffüllen')),
-    h('label', { class: 'checkbox' }, h('input', { type: 'checkbox', checked: st.preferFav, onchange: (e) => { st.preferFav = e.target.checked; } }), h('span', null, 'Gut bewertete Rezepte bevorzugen')),
+    cb('Reste vom Vorabend fürs Remote-Mittagessen', 'leftovers'),
+    cb('Snacks automatisch bis zum Kalorienziel auffüllen', 'autoSnacks'),
+    cb('Gut bewertete Rezepte bevorzugen', 'preferFav'),
     field('Kantine (Schätzung pro Tag)', h('div', { class: 'grid-2' }, withUnit(kcalIn, 'kcal'), withUnit(protIn, 'g P')), CANTEEN.note),
+    field('Auswärts essen (Schätzung pro Mahlzeit)', h('div', { class: 'grid-2' }, withUnit(outKcalIn, 'kcal'), withUnit(outProtIn, 'g P'))),
   );
   render();
   const sheet = openSheet({
@@ -453,7 +485,10 @@ function openPlanSettings(after) {
       h('button', {
         class: 'btn btn-primary',
         onclick: async () => {
-          await updateSettings({ prefs: { food: { ...st, canteenKcal: readNum(kcalIn) || 850, canteenProtein: readNum(protIn) || 28 } } });
+          await updateSettings({ prefs: { food: {
+            ...st, canteenKcal: readNum(kcalIn) || 850, canteenProtein: readNum(protIn) || 28,
+            outKcal: readNum(outKcalIn) || 1000, outProtein: readNum(outProtIn) || 35,
+          } } });
           sheet.close(); toast('Gespeichert – beim nächsten Generieren berücksichtigt'); after();
         },
       }, 'Speichern'),
@@ -464,6 +499,13 @@ function openPlanSettings(after) {
 function slotLabel(k) { return k === 'snack' ? 'Snack' : MEALS[k]; }
 
 function slotRow(slotKey, s, onClick) {
+  if (!s && slotKey === 'fruehstueck' && prefs().fasting) return null;
+  if (s?.r === 'auswaerts') {
+    return h('button', { class: 'meal-row out', onclick: onClick },
+      recipeImage({ ...EATING_OUT, ing: [] }, { size: 'xs' }),
+      h('span', { class: 'meal-main' }, h('span', { class: 'meal-slot' }, slotLabel(slotKey)), h('span', { class: 'meal-name' }, 'Auswärts essen')),
+      h('span', { class: 'meal-kcal' }, `≈${fmtInt(prefs().outKcal)}`));
+  }
   if (!s) return h('button', { class: 'meal-row empty', onclick: onClick }, h('span', { class: 'meal-slot' }, slotLabel(slotKey)), h('span', { class: 'muted' }, '+ wählen'));
   if (s.r === 'kantine') {
     const p = prefs();
@@ -515,12 +557,16 @@ async function openSlot(weekStart, plan, d, slotKey, idx, after) {
     title: `${WEEKDAYS_LONG[d]} · ${slotLabel(slotKey)}`,
     body: [
       r ? [recipeImage(r, { size: 'md' }), h('div', { class: 'list-title' }, r.name), h('div', { class: 'muted small' }, `${fmtInt(r.nut.kcal)} kcal · ${r.nut.p} g Protein · ${r.time} Min.${s.rest ? ' · Reste vom Vorabend' : ''}`)]
-        : s?.r === 'kantine' ? h('p', null, `Kantine: Salatbowl + Dessert (≈ ${p.canteenKcal} kcal, ${p.canteenProtein} g Protein)`) : h('p', { class: 'muted' }, 'Noch nichts geplant.'),
+        : s?.r === 'kantine' ? h('p', null, `Kantine: Salatbowl + Dessert (≈ ${p.canteenKcal} kcal, ${p.canteenProtein} g Protein)`)
+          : s?.r === 'auswaerts' ? h('p', null, `Auswärts essen (≈ ${fmtInt(p.outKcal)} kcal, ${p.outProtein} g Protein geschätzt). „Anderen Vorschlag“ plant wieder selbst gekocht.`)
+            : h('p', { class: 'muted' }, 'Noch nichts geplant.'),
       h('div', { class: 'list' },
         r ? h('button', { class: 'list-item', onclick: () => { sheet.close(); openRecipe(r, after); } }, icon('list'), h('span', { class: 'list-main' }, 'Rezept ansehen'), icon('chevR', 18)) : null,
         h('button', { class: 'list-item', onclick: reroll }, icon('refresh'), h('span', { class: 'list-main' }, 'Anderen Vorschlag'), icon('chevR', 18)),
         h('button', { class: 'list-item', onclick: choose }, icon('dot'), h('span', { class: 'list-main' }, 'Aus allen Rezepten wählen'), icon('chevR', 18)),
-        s ? h('button', { class: 'list-item', onclick: async () => { setSlot({ ...s, locked: !s.locked }); await save(s.locked ? 'Gelöst' : 'Fixiert – bleibt beim Neu-Generieren'); } },
+        slotKey !== 'fruehstueck' && s?.r !== 'auswaerts' ? h('button', { class: 'list-item', onclick: async () => { setSlot({ r: 'auswaerts', locked: true }); await save('Als auswärts markiert – nicht auf der Einkaufsliste'); } },
+          h('span', { class: 'li-emoji' }, '🍽️'), h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, 'Auswärts essen'), h('span', { class: 'list-sub' }, `≈ ${fmtInt(p.outKcal)} kcal geschätzt, kommt nicht auf die Einkaufsliste`))) : null,
+        s && s.r !== 'auswaerts' ? h('button', { class: 'list-item', onclick: async () => { setSlot({ ...s, locked: !s.locked }); await save(s.locked ? 'Gelöst' : 'Fixiert – bleibt beim Neu-Generieren'); } },
           icon('shield'), h('span', { class: 'list-main' }, s.locked ? 'Fixierung lösen' : 'Fixieren (bleibt beim Neu-Generieren)')) : null,
         s ? h('button', { class: 'list-item', onclick: async () => { setSlot(null); await save('Entfernt'); } }, icon('trash'), h('span', { class: 'list-main' }, 'Entfernen')) : null),
     ],
@@ -578,7 +624,21 @@ async function renderPlan(el, ctx) {
     el.append(h('section', { class: 'card day-card' + (date === today() ? ' is-today' : '') },
       h('div', { class: 'card-head' },
         h('h2', null, `${WEEKDAYS_LONG[d]}, ${formatDate(date, 'short')}`),
-        h('span', { class: 'tag', dataset: { kind: dayKind(date, p) } }, dayKind(date, p))),
+        h('div', { class: 'card-actions' },
+          h('button', {
+            class: 'out-toggle' + (day.abend?.r === 'auswaerts' ? ' on' : ''), title: 'Abends auswärts',
+            onclick: async () => {
+              plan.days[d] = day;
+              day.abend = day.abend?.r === 'auswaerts' ? null : { r: 'auswaerts', locked: true };
+              if (!day.abend) {
+                const ratings = await loadRatings();
+                const pick = pickWeighted(candidates('abend', p, ratings, p.maxTime), (x) => weightFor(x, ratings, new Map(), p));
+                day.abend = pick ? { r: pick.id } : null;
+              }
+              await savePlan(wk, plan); after();
+            },
+          }, '🍽️ auswärts'),
+          h('span', { class: 'tag', dataset: { kind: dayKind(date, p) } }, dayKind(date, p)))),
       h('div', { class: 'meals' },
         SLOTS.map((k) => slotRow(k, day[k], open(k))),
         (day.snack || []).map((s, i) => slotRow('snack', s, open('snack', i))),
@@ -600,7 +660,10 @@ async function renderShopping(el, ctx) {
       h('a', { class: 'btn btn-primary', href: '#/ernaehrung?v=plan' }, 'Zum Wochenplan'))));
     return;
   }
-  const list = buildShopping(plan, p);
+  const isCur = wk === weekOf(today());
+  const shopDays = plan.shopDays || [0, 1, 2, 3, 4, 5, 6].filter((d) => !isCur || d >= weekday(today()));
+  const setDays = async (days) => { plan.shopDays = days; await savePlan(wk, plan); ctx.refresh(); };
+  const list = buildShopping(plan, p, shopDays);
   const total = list.groups.reduce((a, g) => a + g.items.length, 0);
   const done = list.groups.reduce((a, g) => a + g.items.filter((i) => plan.checked?.[i.id]).length, 0);
   const text = shoppingText(list, plan, wk);
@@ -612,7 +675,7 @@ async function renderShopping(el, ctx) {
 
   el.append(h('div', { class: 'card shop-head' },
     h('div', null, h('strong', null, `Woche ab ${formatDate(wk, 'short')}`),
-      h('div', { class: 'small muted' }, `${done}/${total} erledigt · ${p.servings} ${p.servings === 1 ? 'Person' : 'Personen'} · ${[...list.portions.values()].reduce((a, b) => a + b, 0)} Portionen`)),
+      h('div', { class: 'small muted' }, `${done}/${total} erledigt · ${p.servings} ${p.servings === 1 ? 'Person' : 'Personen'} · ${[...list.portions.values()].reduce((a, b) => a + b, 0)} Portionen${list.out ? ` · ${list.out}× auswärts` : ''}`)),
     h('div', { class: 'btn-row' },
       h('button', {
         class: 'btn btn-primary small',
@@ -624,6 +687,21 @@ async function renderShopping(el, ctx) {
         },
       }, icon('share', 16), 'Teilen'),
       done ? h('button', { class: 'btn small', onclick: async () => { plan.checked = {}; await savePlan(wk, plan); ctx.refresh(); } }, 'Haken zurücksetzen') : null)));
+
+  el.append(card('Einkaufen für', { iconName: 'calendar' },
+    h('div', { class: 'chips' }, WEEKDAYS_SHORT.map((dn, d) => {
+      const dayPlan = plan.days?.[d];
+      const home = dayPlan && [...SLOTS.map((k) => dayPlan[k]), ...(dayPlan.snack || [])].some((x) => x && x.r !== 'kantine' && x.r !== 'auswaerts');
+      return h('button', {
+        type: 'button', class: 'chip' + (shopDays.includes(d) ? ' active' : '') + (home ? '' : ' faint'),
+        onclick: () => setDays(shopDays.includes(d) ? shopDays.filter((x) => x !== d) : [...shopDays, d].sort()),
+      }, dn);
+    })),
+    h('div', { class: 'btn-row' },
+      isCur ? h('button', { class: 'btn btn-ghost small', onclick: () => setDays([0, 1, 2, 3, 4, 5, 6].filter((d) => d >= weekday(today()))) }, 'Ab heute') : null,
+      h('button', { class: 'btn btn-ghost small', onclick: () => setDays([0, 1, 2, 3, 4, 5, 6]) }, 'Ganze Woche'),
+      h('button', { class: 'btn btn-ghost small', onclick: () => setDays(isCur ? [weekday(today()), weekday(today()) + 1].filter((d) => d < 7) : [0, 1]) }, 'Nur 2 Tage')),
+    h('p', { class: 'muted small' }, 'Wähle die Tage, für die du jetzt einkaufst – z. B. in zwei kleineren Runden. Auswärts-Mahlzeiten und Kantine landen nie auf der Liste.')));
 
   for (const g of list.groups) {
     el.append(card(g.label, {}, h('div', { class: 'list' }, g.items.map((i) => {
