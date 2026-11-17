@@ -33,7 +33,10 @@ export const getMoreItems = () => modules.filter((m) => m.nav?.more).sort((a, b)
  * Wird an goals(), summarizeDay(), todayCard() und charts übergeben.
  */
 export async function loadDays(from, to) {
-  const [list, exercises] = await Promise.all([entries.range(from, to), items.all('exercise')]);
+  const [list, allItems] = await Promise.all([entries.range(from, to), items.all()]);
+  const byKind = new Map();
+  for (const it of allItems) (byKind.get(it.kind) || byKind.set(it.kind, []).get(it.kind)).push(it);
+  const exercises = byKind.get('exercise') || [];
   const byDay = new Map();
   for (const e of list) {
     let d = byDay.get(e.date);
@@ -42,6 +45,7 @@ export async function loadDays(from, to) {
   }
   return {
     from, to, byDay, exercises,
+    itemsOf: (kind) => byKind.get(kind) || [],
     settings: getSettingsSync(),
     get: (date, type) => byDay.get(date)?.[type] || [],
     first: (date, type) => byDay.get(date)?.[type]?.[0] || null,

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 – 2026-11-17
+
+- **Neues Modul „Supplements“** (Mehr → Supplements):
+  - **Arsenal:** Mittel aus dem Katalog oder eigene anlegen – werktags, täglich, eigene Tage oder „bei Bedarf“, mit Zeitpunkt (vor der 1. Mahlzeit, zur Mahlzeit, abends, jederzeit) und Dosis.
+  - **Heute:** nach Zeitpunkt gruppiert abhaken, Bedarfs-Mittel mit einem Tipp nachtragen; Hinweise, wenn heute etwas zeitlich getrennt werden sollte.
+  - **Kombi-Check:** Mittel an-/abwählen – Wirkungsbereiche, Zeitplan (passend zum Intervallfasten), Kombinationshinweise und Höchstmengen passen sich live an.
+  - **Wissen:** 9 Mittel mit Wirkung, Studienlage (gut/teilweise/schwach belegt), Dosierung, BfR-Höchstmengen und Warnhinweisen; Empfehlungen zu den Zielen (Kreatin, B12, Omega-3, Vitamin D, Magnesium) und was eher verzichtbar ist.
+- Supplements zählen als Tagesziel, stehen auf „Heute“, in der Morgen-Erinnerung, im Kalender und als Diagramm im Fortschritt.
+- Quellen der Wissensbasis: docs/SUPPLEMENTS.md.
+
 ## 0.6.0 – 2026-11-17
 
 - **Intervallfasten:** Der Wochenplan enthält standardmäßig kein Frühstück mehr; die Kalorien verteilen sich auf Mittag, Abend und bis zu 3 Snacks (abschaltbar in den Plan-Einstellungen).

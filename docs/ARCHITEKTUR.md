@@ -54,6 +54,8 @@ Aktuelle Typen:
 | `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
 | `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
+| `supplements` (1/Tag) | `{taken:{itemId: Zeitstempel}}` |
+| item `supplement` | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |
 | kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
 
@@ -87,7 +89,7 @@ registerModule({
 ```
 
 `ctx` in `render`: `{ path, query, date, navigate(path, query, {replace}), refresh() }`.
-`data` (aus `loadDays`): `{ get(date, type), first(date, type), byDay, exercises, settings }`.
+`data` (aus `loadDays`): `{ get(date, type), first(date, type), byDay, exercises, itemsOf(kind), settings }`.
 
 ### Neues Modul hinzufügen – Checkliste
 1. Datei unter `js/modules/<bereich>/` anlegen.

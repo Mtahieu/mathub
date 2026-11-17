@@ -18,6 +18,7 @@ import './hub/settings.js';
 import './fitness/training.js';
 import './fitness/nutrition.js';
 import './fitness/sleep.js';
+import './fitness/supplements.js';
 import './fitness/body.js';
 
 // Bereich: Job

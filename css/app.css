@@ -547,3 +547,26 @@ details.measures[open] summary { margin-bottom: 10px; }
 .chip.faint:not(.active) { opacity: .5; }
 .li-emoji { font-size: 1.2rem; width: 24px; text-align: center; flex: none; }
 .af-tip { align-items: flex-start; }
+
+/* ---------- Supplements (0.7) ---------- */
+.supp-group { display: flex; flex-direction: column; }
+.supp-group + .supp-group { margin-top: 6px; }
+.supp-slot { font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.supp-extra { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.supp-extra .chip { min-height: 32px; font-size: .82rem; padding: 4px 10px; }
+.ev { font-size: .66rem; font-weight: 750; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex: none; }
+.ev3 { color: var(--accent); background: var(--accent-soft); }
+.ev2 { color: var(--c-physio); background: color-mix(in srgb, var(--c-physio) 14%, transparent); }
+.ev1 { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.caution-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }
+.pair-list { display: flex; flex-direction: column; gap: 10px; }
+.pair { display: flex; gap: 10px; align-items: flex-start; }
+.pair-ic { flex: none; font-size: 1.05rem; line-height: 1.3; }
+.effect-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.effect { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; }
+.sched-row { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--border); }
+.sched-row:first-of-type { border-top: 0; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
+.setup-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
+.setup-name { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+.setup-row .seg button { font-size: .8rem; min-height: 34px; }

@@ -24,7 +24,7 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.6)
+## Funktionen (Version 0.7)
 
 | Bereich | Was du machen kannst |
 |---|---|
@@ -34,6 +34,7 @@ Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die D
 | **Erinnerungen** | Push um 7:30 und 20:30 Uhr mit deinen offenen Tageszielen |
 | **Ernährung** | Rezepte mit Bildern & vielen Filtern (vegan, Heißluftfritteuse …), Wochenplan für Intervallfasten mit Kantine an Bürotagen und Auswärts-Essen, variable Einkaufsliste – ohne Eingeben, Kalorien geschätzt |
 | **Schlaf** | Stunden & Qualität der letzten Nacht |
+| **Supplements** | Arsenal & Einnahmeplan, tägliches Abhaken, Kombi-Check mit Wirkung & Wechselwirkungen, recherchiertes Wissen |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
 | **Kalender** | Monatsansicht mit Zielerfüllung und Tagesdetails |
