@@ -86,7 +86,7 @@ async function render(el, ctx) {
       field('Schlaf', withUnit(sleep, 'h'))),
     h('button', { class: 'btn btn-ghost small', onclick: calc }, icon('info', 18), 'Richtwert für Kalorien & Protein berechnen'),
     calcBox,
-    h('p', { class: 'muted small' }, 'Leere Felder = kein Tagesziel dafür.'),
+    h('p', { class: 'muted small' }, 'Kalorien und Protein nutzt der Wochenplan als Richtwert (kein Tracking). Schlaf = Tagesziel; leer lassen = kein Ziel.'),
     h('button', {
       class: 'btn btn-primary',
       onclick: async () => {
@@ -98,7 +98,6 @@ async function render(el, ctx) {
   // ----- Tagesziele & Serien -----
   const weigh = checkbox('Wiegen als tägliches Ziel zählen (optional)', s.prefs.weighDaily);
   const thr = intInput({ value: s.prefs.streakThreshold });
-  const tol = intInput({ value: s.prefs.kcalTolerance });
   const mChips = h('div', { class: 'chips' });
   let mSel = [...s.prefs.measureFields];
   const renderM = () => mChips.replaceChildren(...Object.entries(MEASURES).map(([k, label]) => h('button', {
@@ -108,9 +107,7 @@ async function render(el, ctx) {
   renderM();
   el.append(card('Tagesziele & Serien', { iconName: 'flame' },
     weigh,
-    h('div', { class: 'grid-2' },
-      field('Serie zählt ab', withUnit(thr, '%'), 'erfüllter Tagesziele'),
-      field('Kalorien-Toleranz', withUnit(tol, '± %'))),
+    field('Serie zählt ab', withUnit(thr, '%'), 'erfüllter Tagesziele'),
     field('Umfänge, die du messen willst', mChips),
     h('button', {
       class: 'btn btn-primary',
@@ -118,7 +115,6 @@ async function render(el, ctx) {
         await updateSettings({ prefs: {
           weighDaily: weigh.input.checked,
           streakThreshold: Math.min(100, Math.max(10, readNum(thr) ?? 80)),
-          kcalTolerance: Math.min(50, Math.max(0, readNum(tol) ?? 10)),
           measureFields: Object.keys(MEASURES).filter((k) => mSel.includes(k)),
         } });
         saved();

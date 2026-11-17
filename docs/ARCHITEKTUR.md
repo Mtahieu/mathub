@@ -23,7 +23,8 @@ js/core/
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          bereichsübergreifend: today, progress, calendar, more, settings
-  fitness/      training, nutrition, body, physio-catalog (Daten), ratings (Bewertungen)
+  fitness/      training, nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
+                sleep, body, physio-catalog (Daten), ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
@@ -50,7 +51,9 @@ Aktuelle Typen:
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
 | `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |
-| item `food-fav` | `{name, kcal, protein}` |
+| `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras}` – Slot `{r: rezeptId|'kantine', rest?, locked?}` |
+| `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
+| item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |
 | kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
 
@@ -78,6 +81,7 @@ registerModule({
   todayCard(date, data, ctx) { return card(…) },       // Schnell-Eingabe auf „Heute“
   goals(date, data) { return [{ id, label, detail, done, progress, route }] },  // zählt für Serien
   summarizeDay(date, data) { return ['Kurzer Text'] }, // Kalender-Tagesdetails
+  reminderNote(slot, date) { return 'Zeile' },         // Zusatzzeile in Push-Erinnerungen (async ok)
   charts: [{ id, title, render(el, { from, to, data }) {} }],  // Seite „Fortschritt“
 });
 ```

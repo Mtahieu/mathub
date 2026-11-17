@@ -11,7 +11,18 @@ export const DEFAULT_SETTINGS = {
     weighDaily: false,          // Wiegen als Tagesziel (optional, standardmäßig aus)
     measureFields: ['chest', 'waist', 'hips', 'arm', 'thigh'],
     streakThreshold: 80,        // % der Tagesziele, damit ein Tag für die Serie zählt
-    kcalTolerance: 10,          // ± % um das Kalorienziel
+    kcalTolerance: 10,          // (bis 0.4 genutzt)
+    food: {                     // Ernährung: Wochenplan & Einkaufsliste
+      officeDays: [1, 2, 3],    // Bürotage (0 = Mo) → mittags Kantine
+      servings: 1,              // Personen für die Einkaufsliste
+      diet: 'alle',             // alle | pesc | vegetarisch | vegan
+      maxTime: 30,              // max. Kochzeit unter der Woche (Min.)
+      leftovers: true,          // Reste vom Vorabend fürs Remote-Mittagessen
+      autoSnacks: true,         // Snacks bis zum Kalorienziel auffüllen
+      preferFav: true,          // gut bewertete Rezepte bevorzugen
+      canteenKcal: 850,         // Schätzung Salatbowl + Dessert
+      canteenProtein: 28,
+    },
   },
   backup: { lastAt: null, remindDays: 14 },
 };

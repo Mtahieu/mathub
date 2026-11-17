@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 – 2026-11-17
+
+- **Ernährung komplett neu – ohne manuelle Eingabe:** statt Mahlzeiten zu tracken gibt es jetzt
+  - **Rezepte:** 51 Rezepte (33 vegan) mit illustrierten Bildern, Zutaten, Schritten, Portionsrechner und geschätzten Nährwerten. Filter: Suche (auch nach Zutaten), Mahlzeit, Vegan/Vegetarisch/Ohne Fleisch, Zeit, Kalorien, Protein, Küche, Eigenschaften (Meal-Prep, One-Pot, Günstig, Ohne Kochen …), Favoriten, Sortierung.
+  - **Wochenplan:** generiert Frühstück, Mittag, Abend und Snacks passend zum Kalorien- und Proteinziel. An Bürotagen (Standard Di–Do) ist mittags die Kantine (Salatbowl + Dessert ≈ 850 kcal) eingeplant, an Remote-Tagen schnelle Rezepte oder Reste vom Vorabend. Mahlzeiten tauschen, auswählen, fixieren.
+  - **Einkaufsliste** aus dem Wochenplan, nach Supermarkt-Bereichen sortiert, zum Abhaken und Teilen.
+  - Rezepte bewerten: gute kommen öfter, schlechte nicht mehr in den Plan.
+- „Heute“ zeigt die Mahlzeiten des Tages mit geschätzten Kalorien; die Morgen-Erinnerung nennt Mittag- und Abendessen.
+- **Schlaf** ist jetzt ein eigener Bereich (Mehr → Schlaf), Daten unverändert.
+- Kalorien/Protein sind keine Tagesziele mehr (nichts einzugeben); Fortschritt zeigt die geschätzten Werte laut Plan.
+- Alte Ernährungseinträge bleiben gespeichert, werden aber nicht mehr angezeigt.
+
 ## 0.4.0 – 2026-11-17
 
 - **Wassertracking entfernt** (Karte, Tagesziel, Diagramm, Einstellung). Früher eingetragene Werte bleiben gespeichert, werden aber nicht mehr angezeigt.
