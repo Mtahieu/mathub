@@ -1,7 +1,7 @@
-// Ernährung & Alltag: Kalorien/Protein (Mahlzeiten + Favoriten), Wasser, Schlaf.
+// Ernährung & Schlaf: Kalorien/Protein (Mahlzeiten + Favoriten), Schlaf.
+// (Wassertracking wurde in 0.3.0 entfernt; alte 'water'-Einträge bleiben in der DB, werden aber nicht mehr genutzt.)
 //
 // entries type 'food'  (1 pro Tag): data {items:[{id, name, kcal, protein, t}]}
-// entries type 'water' (1 pro Tag): data {ml}
 // entries type 'sleep' (1 pro Tag): data {hours, quality 1–5}   – gilt für die Nacht VOR diesem Tag
 // items   kind 'food-fav': {name, kcal, protein}
 
@@ -16,7 +16,6 @@ import { bucketize, barChart, lineChart } from '../../core/charts.js';
 // ---------- Daten ----------
 export const sumFood = (e) => (e?.data.items || []).reduce(
   (a, i) => ({ kcal: a.kcal + (i.kcal || 0), protein: a.protein + (i.protein || 0) }), { kcal: 0, protein: 0 });
-const waterOf = (data, date) => data.first(date, 'water')?.data.ml || 0;
 
 async function addFood(date, item) {
   const e = await entries.daily('food', date);
@@ -29,18 +28,6 @@ async function removeFood(date, id) {
   const rest = e.data.items.filter((i) => i.id !== id);
   if (rest.length) await entries.saveDaily('food', date, { items: rest });
   else await entries.delete(e.id);
-}
-
-async function setWater(date, ml) {
-  const e = await entries.daily('water', date);
-  if (ml <= 0) { if (e) await entries.delete(e.id); return 0; }
-  await entries.saveDaily('water', date, { ml });
-  return ml;
-}
-
-async function addWater(date, delta) {
-  const e = await entries.daily('water', date);
-  return setWater(date, Math.max(0, (e?.data.ml || 0) + delta));
 }
 
 const kcalOk = (kcal, target, tol) => target && kcal >= target * (1 - tol / 100) && kcal <= target * (1 + tol / 100);
@@ -91,18 +78,6 @@ async function openFoodSheet(date, after) {
   });
 }
 
-function openWaterSheet(date, current, after) {
-  const inp = intInput({ value: current || '' });
-  const sheet = openSheet({
-    title: 'Wasser',
-    body: field('Getrunken heute', withUnit(inp, 'ml')),
-    footer: [
-      h('button', { class: 'btn', onclick: () => sheet.close() }, 'Abbrechen'),
-      h('button', { class: 'btn btn-primary', onclick: async () => { await setWater(date, readNum(inp) || 0); sheet.close(); after(); } }, 'Speichern'),
-    ],
-  });
-}
-
 function openSleepSheet(date, existing, after) {
   const hours = numInput({ value: existing?.data.hours ?? null, placeholder: 'z. B. 7,5' });
   let quality = existing?.data.quality ?? null;
@@ -145,16 +120,6 @@ function foodMetrics(f, t) {
 let tolCache = 10;
 const getTol = () => tolCache;
 
-function waterBlock(date, ml, target, after) {
-  const steps = [250, 500];
-  return h('div', { class: 'water' },
-    h('button', { class: 'water-val plain', onclick: () => openWaterSheet(date, ml, after) },
-      icon('droplet', 20), h('span', { class: 'num' }, fmt(ml / 1000, 2) + ' l'), target ? h('span', { class: 'muted small' }, ` / ${fmt(target / 1000, 1)} l`) : null),
-    h('div', { class: 'water-btns' },
-      h('button', { class: 'icon-btn small', 'aria-label': '250 ml weniger', onclick: async () => { await addWater(date, -250); after(); } }, icon('minus', 18)),
-      steps.map((st) => h('button', { class: 'btn small', onclick: async () => { await addWater(date, st); after(); } }, `+${st}`))));
-}
-
 function sleepRow(date, sl, after) {
   return h('button', { class: 'list-item', onclick: () => openSleepSheet(date, sl, after) },
     icon('moon', 20),
@@ -174,7 +139,7 @@ async function render(el, ctx) {
   const foodEntry = data.first(date, 'food');
   const f = sumFood(foodEntry);
 
-  el.append(pageHeader('Ernährung & Alltag'));
+  el.append(pageHeader('Ernährung & Schlaf'));
   el.append(dateNav(ctx));
 
   if (!t.kcal || !t.protein) {
@@ -196,10 +161,6 @@ async function render(el, ctx) {
       h('button', { class: 'icon-btn small', 'aria-label': 'Entfernen', onclick: async () => { await removeFood(date, i.id); after(); } }, icon('trash', 18)))))
     : h('p', { class: 'muted small' }, 'Noch nichts eingetragen.')));
 
-  el.append(card('Wasser', { iconName: 'droplet' },
-    waterBlock(date, waterOf(data, date), t.waterMl, after),
-    t.waterMl ? metric('', '', waterOf(data, date), t.waterMl) : null));
-
   el.append(card('Schlaf', { iconName: 'moon' }, h('div', { class: 'list' }, sleepRow(date, data.first(date, 'sleep'), after))));
 }
 
@@ -213,8 +174,7 @@ function todayCard(date, data, ctx) {
       iconName: 'food',
       actions: h('button', { class: 'btn btn-primary small', onclick: () => openFoodSheet(date, after) }, icon('plus', 16), 'Mahlzeit'),
     }, foodMetrics(f, t)),
-    card('Alltag', { iconName: 'droplet' },
-      waterBlock(date, waterOf(data, date), t.waterMl, after),
+    card('Schlaf', { iconName: 'moon' },
       h('div', { class: 'list' }, sleepRow(date, data.first(date, 'sleep'), after))),
   ];
 }
@@ -226,10 +186,6 @@ function goals(date, data) {
   const f = sumFood(data.first(date, 'food'));
   if (t.kcal) out.push({ id: 'kcal', label: 'Kalorien', detail: `${fmtInt(f.kcal)} / ${fmtInt(t.kcal)} kcal (± ${tol} %)`, done: !!kcalOk(f.kcal, t.kcal, tol), progress: Math.min(f.kcal / t.kcal, 1), route: '/ernaehrung' });
   if (t.protein) out.push({ id: 'protein', label: 'Protein', detail: `${fmt(f.protein)} / ${fmt(t.protein)} g`, done: f.protein >= t.protein, progress: Math.min(f.protein / t.protein, 1), route: '/ernaehrung' });
-  if (t.waterMl) {
-    const ml = waterOf(data, date);
-    out.push({ id: 'water', label: 'Wasser', detail: `${fmt(ml / 1000, 2)} / ${fmt(t.waterMl / 1000, 1)} l`, done: ml >= t.waterMl, progress: Math.min(ml / t.waterMl, 1), route: '/ernaehrung' });
-  }
   if (t.sleepH) {
     const sl = data.first(date, 'sleep');
     out.push({ id: 'sleep', label: 'Schlaf', detail: sl ? `${fmt(sl.data.hours, 2)} / ${fmt(t.sleepH)} h` : 'nicht eingetragen', done: !!sl && sl.data.hours >= t.sleepH, progress: sl ? Math.min(sl.data.hours / t.sleepH, 1) : 0, route: '/ernaehrung' });
@@ -241,8 +197,6 @@ function summarizeDay(date, data) {
   const out = [];
   const fe = data.first(date, 'food');
   if (fe) { const f = sumFood(fe); out.push(`${fmtInt(f.kcal)} kcal · ${fmt(f.protein)} g Protein`); }
-  const w = waterOf(data, date);
-  if (w) out.push(`${fmt(w / 1000, 2)} l Wasser`);
   const sl = data.first(date, 'sleep');
   if (sl) out.push(`${fmt(sl.data.hours, 2)} h Schlaf`);
   return out;
@@ -265,14 +219,6 @@ const charts = [
     },
   },
   {
-    id: 'water', title: 'Wasser (l)',
-    render(el, { from, to, data }) {
-      const { points } = bucketize(from, to, (k) => { const ml = waterOf(data, k); return ml ? ml / 1000 : null; });
-      const t = data.settings.targets.waterMl;
-      el.append(barChart(points, { target: t ? t / 1000 : null, label: 'Wasser' }));
-    },
-  },
-  {
     id: 'sleep', title: 'Schlaf (h)',
     render(el, { from, to, data }) {
       const pts = [];
@@ -285,8 +231,8 @@ const charts = [
 registerModule({
   id: 'nutrition',
   area: 'fitness',
-  title: 'Ernährung & Alltag',
-  description: 'Kalorien, Protein, Wasser & Schlaf',
+  title: 'Ernährung & Schlaf',
+  description: 'Kalorien, Protein & Schlaf',
   order: 30,
   nav: { tab: 3, label: 'Ernährung', icon: 'food' },
   routes: [{ path: '/ernaehrung', render }],

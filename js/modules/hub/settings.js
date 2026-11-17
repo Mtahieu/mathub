@@ -62,7 +62,6 @@ async function render(el, ctx) {
   const wGoal = numInput({ value: s.targets.weightGoal, placeholder: 'kg' });
   const kcal = intInput({ value: s.targets.kcal, placeholder: 'kcal' });
   const protein = intInput({ value: s.targets.protein, placeholder: 'g' });
-  const water = numInput({ value: s.targets.waterMl ? s.targets.waterMl / 1000 : null, placeholder: 'l' });
   const sleep = numInput({ value: s.targets.sleepH, placeholder: 'h' });
   const calcBox = h('div');
   const calc = async () => {
@@ -84,7 +83,6 @@ async function render(el, ctx) {
       field('Zielgewicht', withUnit(wGoal, 'kg')),
       field('Kalorien pro Tag', withUnit(kcal, 'kcal')),
       field('Protein pro Tag', withUnit(protein, 'g')),
-      field('Wasser pro Tag', withUnit(water, 'l')),
       field('Schlaf', withUnit(sleep, 'h'))),
     h('button', { class: 'btn btn-ghost small', onclick: calc }, icon('info', 18), 'Richtwert für Kalorien & Protein berechnen'),
     calcBox,
@@ -92,14 +90,13 @@ async function render(el, ctx) {
     h('button', {
       class: 'btn btn-primary',
       onclick: async () => {
-        const wl = readNum(water);
-        await updateSettings({ targets: { weightGoal: readNum(wGoal), kcal: readNum(kcal), protein: readNum(protein), waterMl: wl ? Math.round(wl * 1000) : null, sleepH: readNum(sleep) } });
+        await updateSettings({ targets: { weightGoal: readNum(wGoal), kcal: readNum(kcal), protein: readNum(protein), sleepH: readNum(sleep) } });
         saved();
       },
     }, 'Ziele speichern')));
 
   // ----- Tagesziele & Serien -----
-  const weigh = checkbox('Tägliches Wiegen als Tagesziel', s.prefs.weighDaily);
+  const weigh = checkbox('Wiegen als tägliches Ziel zählen (optional)', s.prefs.weighDaily);
   const thr = intInput({ value: s.prefs.streakThreshold });
   const tol = intInput({ value: s.prefs.kcalTolerance });
   const mChips = h('div', { class: 'chips' });

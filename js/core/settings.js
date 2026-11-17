@@ -5,14 +5,13 @@ import { emit } from './events.js';
 
 export const DEFAULT_SETTINGS = {
   profile: { name: '', heightCm: null, birthYear: null, sex: '', activity: 1.55 },
-  targets: { weightGoal: null, kcal: null, protein: null, waterMl: 2500, sleepH: 8 },
+  targets: { weightGoal: null, kcal: null, protein: null, sleepH: 8 },
   prefs: {
     theme: 'dark',              // 'dark' | 'light' | 'system'
-    weighDaily: true,           // tägliches Wiegen als Tagesziel
+    weighDaily: false,          // Wiegen als Tagesziel (optional, standardmäßig aus)
     measureFields: ['chest', 'waist', 'hips', 'arm', 'thigh'],
     streakThreshold: 80,        // % der Tagesziele, damit ein Tag für die Serie zählt
     kcalTolerance: 10,          // ± % um das Kalorienziel
-    waterSteps: [250, 500],
   },
   backup: { lastAt: null, remindDays: 14 },
 };

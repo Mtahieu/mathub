@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 – 2026-11-17
+
+- **Wassertracking entfernt** (Karte, Tagesziel, Diagramm, Einstellung). Früher eingetragene Werte bleiben gespeichert, werden aber nicht mehr angezeigt.
+- **Wiegen ist optional:** kein tägliches Tagesziel mehr. Gewicht kann weiterhin auf „Heute“ und unter Körperwerte eingetragen werden; als Ziel lässt es sich in den Einstellungen wieder einschalten.
+- Bereich heißt jetzt „Ernährung & Schlaf“.
+- Datenmigration 2: übernimmt die beiden Änderungen in bestehende Einstellungen.
+
 ## 0.3.0 – 2026-11-17
 
 - **Neuer Bereich „Job“** (Mehr → Job): täglicher Check-in mit drei Fragen auf einer 1–10-Skala mit Emojis – „Wie viel habe ich geleistet?“, „Wie zufrieden bin ich heute mit meinem Job?“, „Fühle ich mich gebraucht?“ – plus Highlight und Lowlight des Tages.

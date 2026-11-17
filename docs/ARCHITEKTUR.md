@@ -33,7 +33,7 @@ tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 
 | Store | Inhalt | Beispiel |
 |---|---|---|
-| `entries` | alles, was zu einem **Tag** gehört: `{id, type, date, data, createdAt, updatedAt}` | `type:'body'`, `type:'exercise'`, `type:'water'` |
+| `entries` | alles, was zu einem **Tag** gehört: `{id, type, date, data, createdAt, updatedAt}` | `type:'body'`, `type:'exercise'`, `type:'sleep'` |
 | `items` | **Stammdaten**: `{id, kind, …}` | `kind:'exercise'`, `kind:'food-fav'` |
 | `kv` | Schlüssel/Wert | `settings`, `installedAt`, `dataVersion` |
 
@@ -46,7 +46,7 @@ Aktuelle Typen:
 | `body` (1/Tag) | `{weight, bodyFat, measures:{chest,…}, note}` |
 | `exercise` | `{exerciseId, sets:[{reps, weight, seconds}], done, pain, note}` |
 | `food` (1/Tag) | `{items:[{id, name, kcal, protein, t}]}` |
-| `water` (1/Tag) | `{ml}` |
+| `water` (1/Tag) | `{ml}` – **nicht mehr genutzt** seit 0.3.0 (Altdaten bleiben erhalten) |
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
 | `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |

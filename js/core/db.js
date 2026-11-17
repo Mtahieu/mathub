@@ -13,7 +13,7 @@ import { emit } from './events.js';
 
 const DB_NAME = 'mathub';
 export const DB_VERSION = 1;
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 let dbPromise = null;
 
@@ -90,7 +90,7 @@ export const entries = {
   range: (from, to) => withStore('entries', 'readonly', (s) => wrap(s.index('date').getAll(IDBKeyRange.bound(from, to)))),
   rangeByType: (type, from, to) =>
     withStore('entries', 'readonly', (s) => wrap(s.index('type_date').getAll(IDBKeyRange.bound([type, from], [type, to])))),
-  /** Für Typen mit genau einem Eintrag pro Tag (z. B. body, water, sleep). */
+  /** Für Typen mit genau einem Eintrag pro Tag (z. B. body, sleep). */
   async daily(type, date) {
     return (await entries.byTypeDate(type, date))[0] || null;
   },
@@ -134,8 +134,22 @@ export const kv = {
 };
 
 // ---------- Migrationen ----------
-// Beispiel: { to: 2, async run() { const all = await entries.byType('body'); … } }
-const MIGRATIONS = [];
+// Beispiel: { to: 3, async run() { const all = await entries.byType('body'); … } }
+const MIGRATIONS = [
+  {
+    // 0.3.0: Wassertracking entfernt (alte 'water'-Einträge bleiben unangetastet), Wiegen nur noch optional.
+    to: 2,
+    async run() {
+      const s = await kv.get('settings', null);
+      if (!s) return;
+      const targets = { ...(s.targets || {}) };
+      delete targets.waterMl;
+      const prefs = { ...(s.prefs || {}), weighDaily: false };
+      delete prefs.waterSteps;
+      await kv.set('settings', { ...s, targets, prefs });
+    },
+  },
+];
 
 export async function runMigrations() {
   let v = await kv.get('dataVersion', 0);

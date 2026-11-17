@@ -113,7 +113,6 @@ async function render(el, ctx) {
 async function todayCard(date, data, ctx) {
   const e = data.first(date, 'body');
   const w = e?.data.weight;
-  if (!data.settings.prefs.weighDaily && w == null) return null;
   if (w != null) {
     return card('Gewicht', { iconName: 'scale', actions: h('a', { class: 'link', href: `#/koerper${date !== today() ? '?d=' + date : ''}` }, 'Details') },
       h('div', { class: 'big-num' }, `${fmt(w)} kg`));
@@ -128,8 +127,9 @@ async function todayCard(date, data, ctx) {
     ctx.refresh();
   };
   input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') save(); });
-  return card('Gewicht', { iconName: 'scale', actions: h('a', { class: 'link', href: '#/koerper' }, 'Details') },
-    h('div', { class: 'inline-form' }, withUnit(input, 'kg'), h('button', { class: 'btn btn-primary', onclick: save }, 'Speichern')));
+  const optional = !data.settings.prefs.weighDaily;
+  return card(optional ? 'Gewicht (optional)' : 'Gewicht', { iconName: 'scale', cls: optional ? 'quiet' : '', actions: h('a', { class: 'link', href: '#/koerper' }, 'Details') },
+    h('div', { class: 'inline-form' }, withUnit(input, 'kg'), h('button', { class: optional ? 'btn' : 'btn btn-primary', onclick: save }, 'Speichern')));
 }
 
 function goals(date, data) {
