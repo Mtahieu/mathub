@@ -1,15 +1,18 @@
 // Training: Übungsbibliothek (Physio, Kraft, …), Wochenplan und tägliches Abhaken/Protokollieren.
 //
 // items  kind 'exercise': {name, category, mode:'reps'|'time'|'check', weighted, targetSets, targetReps,
-//                          targetSeconds, days:[0..6], trackPain, notes, archived}
-// entries type 'exercise': data {exerciseId, sets:[{reps, weight, seconds}], done, pain, note}
+//                          targetSeconds, days:[0..6], trackPain, notes, archived, catalogId?}
+// entries type 'exercise': data {exerciseId, sets:[{reps, weight, seconds}], done, pain, note, rating?}
+// Bewertungen: siehe ratings.js · Katalog: siehe physio-catalog.js
 
 import { registerModule, loadDays } from '../../core/registry.js';
 import { items, entries } from '../../core/db.js';
 import {
   h, icon, card, dateNav, pageHeader, segmented, openSheet, confirmDialog, toast, field, numInput, intInput,
-  readNum, textInput, textarea, select, checkbox, emptyState, fmt, sectionTitle,
+  readNum, textInput, textarea, select, checkbox, emptyState, fmt, sectionTitle, starRating,
 } from '../../core/ui.js';
+import { CATALOG, CATALOG_INFO, FOCUS, LEVELS, toExercise } from './physio-catalog.js';
+import { loadRatings, rate, ratingKey, avgStars, isFavorite, isDisliked } from './ratings.js';
 import { today, weekday, WEEKDAYS_SHORT, WEEKDAYS_LONG, keyFromTs, formatDate, startOfWeek, dayRange } from '../../core/dates.js';
 import { lineChart, barChart, emptyChart } from '../../core/charts.js';
 
@@ -139,6 +142,9 @@ async function openLogSheet(ex, date, existing, after) {
   const slider = h('input', { type: 'range', min: 0, max: 10, step: 1, value: pain ?? 0, class: 'range' });
   slider.addEventListener('input', () => { pain = Number(slider.value); painVal.textContent = String(pain); });
   const note = textarea({ value: existing?.data.note || '', placeholder: 'Wie lief es? (optional)', rows: 2 });
+  const ratings = await loadRatings();
+  let stars = existing?.data.rating ?? null;
+  const prevOpinion = ratings.get(ratingKey(ex))?.stars;
 
   const sheet = openSheet({
     title: ex.name,
@@ -148,6 +154,8 @@ async function openLogSheet(ex, date, existing, after) {
       last ? h('div', { class: 'muted small' }, `Letztes Mal (${formatDate(last.date, 'short')}): ${setsText(ex, last.data)}`) : null,
       ex.mode !== 'check' ? setsBox : null,
       ex.trackPain ? field('Beschwerden (0 = keine, 10 = stark)', h('div', { class: 'range-row' }, slider, painVal)) : null,
+      field('Wie fandest du die Übung?', starRating(stars, (v) => { stars = v; }),
+        prevOpinion && !stars ? `Bisher: ${'★'.repeat(prevOpinion)}` : null),
       field('Notiz', note),
     ],
     footer: [
@@ -161,8 +169,9 @@ async function openLogSheet(ex, date, existing, after) {
           const clean = ex.mode === 'check' ? [] : sets.filter((st) => Object.values(st).some((v) => v != null));
           await entries.put({
             ...(existing || {}), type: 'exercise', date,
-            data: { exerciseId: ex.id, sets: clean, done: true, pain: ex.trackPain ? pain : null, note: note.value.trim() },
+            data: { exerciseId: ex.id, sets: clean, done: true, pain: ex.trackPain ? pain : null, note: note.value.trim(), rating: stars },
           });
+          if (stars) await rate(ratingKey(ex), stars, date);
           sheet.close();
           toast('Gespeichert');
           after();
@@ -173,11 +182,11 @@ async function openLogSheet(ex, date, existing, after) {
 }
 
 function openExerciseEditor(ex, after) {
-  const isNew = !ex;
+  const isNew = !ex?.id;
   const st = {
     name: ex?.name || '', category: ex?.category || 'physio', mode: ex?.mode || 'reps', weighted: ex?.weighted ?? false,
     targetSets: ex?.targetSets ?? 3, targetReps: ex?.targetReps ?? 10, targetSeconds: ex?.targetSeconds ?? 30,
-    days: [...(ex?.days ?? [0, 1, 2, 3, 4, 5, 6])], trackPain: ex?.trackPain ?? (ex ? false : true),
+    days: [...(ex?.days ?? [0, 1, 2, 3, 4, 5, 6])], trackPain: ex?.trackPain ?? true,
     notes: ex?.notes || '', archived: ex?.archived ?? false,
   };
 
@@ -337,13 +346,15 @@ async function render(el, ctx) {
     actions: h('button', { class: 'icon-btn', 'aria-label': 'Neue Übung', onclick: () => openExerciseEditor(null, after) }, icon('plus')),
   }));
   el.append(segmented(
-    [{ value: 'tag', label: 'Tag' }, { value: 'plan', label: 'Wochenplan' }, { value: 'uebungen', label: 'Übungen' }],
+    [{ value: 'tag', label: 'Tag' }, { value: 'plan', label: 'Plan' }, { value: 'uebungen', label: 'Übungen' }, { value: 'katalog', label: 'Katalog' }],
     view, (v) => ctx.navigate('/training', { ...ctx.query, v: v === 'tag' ? undefined : v }, { replace: true })));
 
   const all = data.exercises;
+  if (view === 'katalog') return renderCatalog(el, ctx, all, after);
   if (!all.length) {
-    el.append(card(null, {}, emptyState('Noch keine Übungen angelegt. Trag deine Physioübungen ein oder starte mit Vorlagen fürs Krafttraining.',
-      h('button', { class: 'btn btn-primary', onclick: () => openExerciseEditor(null, after) }, icon('plus', 18), 'Neue Übung'),
+    el.append(card(null, {}, emptyState('Noch keine Übungen angelegt. Such dir Übungen aus dem Physio-Katalog aus, leg eigene an oder starte mit Vorlagen fürs Krafttraining.',
+      h('a', { class: 'btn btn-primary', href: '#/training?v=katalog' }, icon('heart', 18), 'Physio-Katalog'),
+      h('button', { class: 'btn', onclick: () => openExerciseEditor(null, after) }, icon('plus', 18), 'Eigene'),
       h('button', { class: 'btn', onclick: () => openTemplates(after) }, 'Vorlagen'))));
     return;
   }
@@ -390,18 +401,117 @@ function renderPlan(el, all, after) {
     }))));
 }
 
-function renderLibrary(el, all, after) {
+async function renderLibrary(el, all, after) {
+  const ratings = await loadRatings();
   el.append(h('div', { class: 'btn-row' },
     h('button', { class: 'btn btn-primary', onclick: () => openExerciseEditor(null, after) }, icon('plus', 18), 'Neue Übung'),
+    h('a', { class: 'btn', href: '#/training?v=katalog' }, 'Katalog'),
     h('button', { class: 'btn', onclick: () => openTemplates(after) }, 'Vorlagen')));
-  const row = (ex) => h('button', { class: 'list-item', onclick: () => openExerciseEditor(ex, after) },
-    h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, ex.name), h('span', { class: 'list-sub' }, `${targetText(ex)} · ${daysText(ex.days)}`)),
-    icon('edit', 18));
+  const row = (ex) => {
+    const r = ratings.get(ratingKey(ex));
+    return h('button', { class: 'list-item', onclick: () => openExerciseEditor(ex, after) },
+      h('span', { class: 'list-main' },
+        h('span', { class: 'list-title' }, ex.name),
+        h('span', { class: 'list-sub' }, `${targetText(ex)} · ${daysText(ex.days)}`)),
+      r ? starRating(r.stars, null, { size: 14, readonly: true }) : null,
+      icon('edit', 18));
+  };
   for (const [cat, list] of groupByCategory(activeExercises(all))) {
     el.append(card(catLabel(cat), { iconName: cat === 'physio' ? 'heart' : 'dumbbell' }, h('div', { class: 'list' }, list.map(row))));
   }
   const archived = all.filter((e) => e.archived).sort(sortEx);
   if (archived.length) el.append(sectionTitle('Archiviert'), card(null, {}, h('div', { class: 'list' }, archived.map(row))));
+}
+
+
+// ---------- Physio-Katalog ----------
+function catalogTarget(c) {
+  const base = c.mode === 'time'
+    ? `${c.sets} × ${c.seconds >= 120 ? Math.round(c.seconds / 60) + ' min' : c.seconds + ' s'}`
+    : `${c.sets} × ${c.reps}`;
+  return base + (c.perSide ? ' pro Seite' : '');
+}
+
+function levelDots(level) {
+  return h('span', { class: 'level', title: LEVELS[level], 'aria-label': `Level: ${LEVELS[level]}` },
+    [1, 2, 3].map((n) => h('i', { class: n <= level ? 'on' : '' })));
+}
+
+function openCatalogItem(c, own, ratings, after) {
+  const rec = ratings.get(c.id);
+  const avg = avgStars(rec);
+  const sheet = openSheet({
+    title: c.name,
+    body: [
+      h('div', { class: 'chips' },
+        c.focus.map((f) => h('span', { class: 'tag' }, FOCUS[f])),
+        h('span', { class: 'tag' }, LEVELS[c.level]),
+        h('span', { class: 'tag' }, catalogTarget(c))),
+      h('ol', { class: 'steps' }, c.steps.map((st) => h('li', null, st))),
+      c.tip ? h('p', { class: 'small' }, h('strong', null, 'Tipp: '), c.tip) : null,
+      c.caution ? h('div', { class: 'banner warn small' }, icon('info'), h('span', null, c.caution)) : null,
+      field('Deine Bewertung', starRating(rec?.stars, async (v) => { await rate(c.id, v); toast(v ? 'Bewertung gespeichert' : 'Bewertung entfernt'); after(); }),
+        rec?.history?.length > 1 ? `Ø ${fmt(avg, 1)} aus ${rec.history.length} Bewertungen` : 'Tippe auf einen Stern – die App merkt sich, was dir gefällt.'),
+    ],
+    footer: own
+      ? [h('button', { class: 'btn', onclick: () => { sheet.close(); openExerciseEditor(own, after); } }, icon('edit', 18), 'In meinem Plan bearbeiten')]
+      : [h('button', { class: 'btn btn-primary', onclick: () => { sheet.close(); openExerciseEditor(toExercise(c), after); } }, icon('plus', 18), 'Zu meinen Übungen')],
+  });
+}
+
+async function renderCatalog(el, ctx, all, after) {
+  const ratings = await loadRatings();
+  const focus = ctx.query.f || 'alle';
+  const level = Number(ctx.query.l) || 0;
+  const own = new Map(all.filter((e) => e.catalogId && !e.archived).map((e) => [e.catalogId, e]));
+  const setQ = (q) => ctx.navigate('/training', { ...ctx.query, ...q }, { replace: true });
+
+  el.append(h('details', { class: 'banner info-box' },
+    h('summary', null, icon('info'), h('span', null, h('strong', null, CATALOG_INFO.title), h('span', { class: 'small muted' }, ' · Hinweise lesen'))),
+    h('p', { class: 'small' }, CATALOG_INFO.note)));
+
+  const chip = (label, active, onclick) => h('button', { type: 'button', class: 'chip' + (active ? ' active' : ''), onclick }, label);
+  el.append(h('div', { class: 'chips scroll' },
+    chip('Alle', focus === 'alle', () => setQ({ f: undefined })),
+    chip('★ Favoriten', focus === 'fav', () => setQ({ f: 'fav' })),
+    chip('Im Plan', focus === 'plan', () => setQ({ f: 'plan' })),
+    Object.entries(FOCUS).map(([k, label]) => chip(label, focus === k, () => setQ({ f: k })))));
+  el.append(segmented([{ value: 0, label: 'Alle' }, ...Object.entries(LEVELS).map(([k, l]) => ({ value: Number(k), label: l }))],
+    level, (v) => setQ({ l: v || undefined })));
+
+  let list = CATALOG.filter((c) => {
+    const r = ratings.get(c.id);
+    if (level && c.level !== level) return false;
+    if (focus === 'fav') return isFavorite(r);
+    if (focus === 'plan') return own.has(c.id);
+    if (focus !== 'alle') return c.focus.includes(focus);
+    return true;
+  });
+  const score = (c) => ratings.get(c.id)?.stars ?? 3.5;
+  list = list.sort((a, b) => score(b) - score(a) || a.level - b.level);
+  const liked = list.filter((c) => !isDisliked(ratings.get(c.id)));
+  const disliked = list.filter((c) => isDisliked(ratings.get(c.id)));
+
+  const row = (c) => {
+    const r = ratings.get(c.id);
+    return h('button', { class: 'list-item', onclick: () => openCatalogItem(c, own.get(c.id), ratings, after) },
+      h('span', { class: 'list-main' },
+        h('span', { class: 'list-title' }, c.name),
+        h('span', { class: 'list-sub' }, levelDots(c.level), ' ', catalogTarget(c), ' · ', c.focus.map((f) => FOCUS[f]).join(', '))),
+      own.has(c.id) ? h('span', { class: 'tag', dataset: { cat: 'physio' } }, 'im Plan') : null,
+      r ? starRating(r.stars, null, { size: 14, readonly: true }) : null);
+  };
+
+  if (!list.length) {
+    el.append(card(null, {}, h('p', { class: 'muted' }, focus === 'fav'
+      ? 'Noch keine Favoriten. Bewerte Übungen mit 4–5 Sternen, dann erscheinen sie hier.'
+      : 'Keine Übungen für diesen Filter.')));
+    return;
+  }
+  el.append(card(`${liked.length} Übungen`, { iconName: 'heart' }, h('div', { class: 'list' }, liked.map(row))));
+  if (disliked.length) {
+    el.append(sectionTitle('Eher nicht so meins'), card(null, { cls: 'dim' }, h('div', { class: 'list' }, disliked.map(row))));
+  }
 }
 
 // ---------- Startseite, Ziele, Zusammenfassung, Diagramme ----------

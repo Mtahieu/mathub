@@ -9,6 +9,7 @@ import {
 } from '../../core/ui.js';
 import { createBackup, downloadFile, shareFile, markBackupDone, readBackupFile, restoreBackup } from '../../core/backup.js';
 import { checkForUpdate } from '../../core/update.js';
+import { pushSupported, pushState, enablePush, disablePush, testNotification, REPO_SECRET_URL, WORKFLOW_URL } from '../../core/push.js';
 import { APP_VERSION } from '../../version.js';
 import { MEASURES } from '../fitness/body.js';
 import { keyFromTs, formatDate } from '../../core/dates.js';
@@ -132,6 +133,9 @@ async function render(el, ctx) {
     segmented([{ value: 'dark', label: 'Dunkel' }, { value: 'light', label: 'Hell' }, { value: 'system', label: 'System' }], s.prefs.theme,
       async (v) => { await updateSettings({ prefs: { theme: v } }); })));
 
+  // ----- Erinnerungen -----
+  el.append(await reminderCard(ctx));
+
   // ----- Daten -----
   const persisted = await navigator.storage?.persisted?.().catch(() => false);
   const est = await navigator.storage?.estimate?.().catch(() => null);
@@ -175,7 +179,7 @@ async function render(el, ctx) {
     }, icon('trash', 18), 'Alle Daten löschen')));
 
   // ----- Über -----
-  el.append(card('Über Mathub', { iconName: 'info' },
+  el.append(card('Über Mathub', { iconName: 'shield' },
     h('div', { class: 'kv-list small' },
       h('div', null, h('span', { class: 'muted' }, 'Version'), h('span', null, APP_VERSION))),
     h('button', {
@@ -188,6 +192,87 @@ async function render(el, ctx) {
 
   const anchor = ctx.query.s;
   if (anchor) setTimeout(() => el.querySelector('.anchor-' + anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+// ---------- Erinnerungen ----------
+const REMINDER_TIMES = '7:30 Uhr (Tagesüberblick) und 20:30 Uhr (was noch offen ist)';
+
+async function reminderCard(ctx) {
+  const c = card('Erinnerungen (Push)', { iconName: 'bell', cls: 'anchor-push' });
+  if (!pushSupported()) {
+    c.append(h('p', { class: 'muted small' }, 'Dieser Browser unterstützt keine Push-Benachrichtigungen. Öffne Mathub in Chrome und installiere die App.'));
+    return c;
+  }
+  const st = await pushState().catch(() => ({ status: 'off' }));
+  const test = (slot) => async () => {
+    try { await testNotification(slot); toast('Test-Benachrichtigung gesendet'); } catch (err) { toast(err.message); }
+  };
+  c.append(h('p', { class: 'muted small' }, `Mathub erinnert dich täglich um ${REMINDER_TIMES}. Der Text entsteht auf deinem Handy aus deinen Tageszielen – GitHub sendet nur ein leeres Wecksignal.`));
+
+  if (st.status === 'denied') {
+    c.append(h('div', { class: 'banner warn small' }, icon('info'), h('span', null, 'Benachrichtigungen sind für Mathub blockiert. Chrome → ⋮ → Einstellungen → Website-Einstellungen → Benachrichtigungen → mtahieu.github.io erlauben.')));
+    return c;
+  }
+  if (st.status === 'on') {
+    c.append(h('div', { class: 'kv-list small' },
+      h('div', null, h('span', { class: 'muted' }, 'Status'), h('span', null, '✓ eingerichtet')),
+      h('div', null, h('span', { class: 'muted' }, 'Seit'), h('span', null, formatDate(keyFromTs(st.saved.createdAt))))));
+    c.append(h('div', { class: 'btn-row' },
+      h('button', { class: 'btn', onclick: test('morgen') }, 'Test Morgen'),
+      h('button', { class: 'btn', onclick: test('abend') }, 'Test Abend')));
+    c.append(h('button', { class: 'btn btn-ghost small', onclick: () => openSetupSheet(st.config) }, 'Einrichtungscode erneut anzeigen'));
+    c.append(h('button', {
+      class: 'btn btn-danger',
+      onclick: async () => {
+        if (!await confirmDialog('Erinnerungen auf diesem Gerät ausschalten? Das GitHub-Secret kannst du danach löschen.', { okLabel: 'Ausschalten', danger: true })) return;
+        await disablePush(); toast('Erinnerungen ausgeschaltet'); ctx.refresh();
+      },
+    }, 'Ausschalten'));
+    return c;
+  }
+  if (st.status === 'changed') {
+    c.append(h('div', { class: 'banner warn small' }, icon('info'), h('span', null, 'Chrome hat die Push-Verbindung erneuert. Bitte neu einrichten und den Code in GitHub ersetzen.')));
+  }
+  c.append(h('button', {
+    class: 'btn btn-primary',
+    onclick: async (e) => {
+      e.currentTarget.disabled = true;
+      try {
+        const { config } = await enablePush();
+        openSetupSheet(config, () => ctx.refresh());
+      } catch (err) { toast(err.message); ctx.refresh(); }
+    },
+  }, icon('plus', 18), 'Erinnerungen einrichten'));
+  c.append(h('button', { class: 'btn btn-ghost small', onclick: test('abend') }, 'Nur testen, wie sie aussehen'));
+  return c;
+}
+
+function openSetupSheet(config, onDone) {
+  const box = h('textarea', { class: 'input code-box', readonly: true, rows: 5 });
+  box.value = config;
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(config); toast('Code kopiert'); }
+    catch { box.select(); toast('Bitte manuell markieren und kopieren'); }
+  };
+  const sheet = openSheet({
+    title: 'Erinnerungen verbinden',
+    body: [
+      h('p', { class: 'small' }, 'Einmalig: Den Code als geheimes Secret in deinem GitHub-Repo speichern. Er bleibt dort verschlüsselt und ist nicht öffentlich.'),
+      h('ol', { class: 'howto' },
+        h('li', null, h('strong', null, 'Code kopieren'), ' (Button unten).'),
+        h('li', null, h('a', { class: 'link', href: REPO_SECRET_URL, target: '_blank', rel: 'noopener' }, 'GitHub-Secret anlegen'), ' öffnen.'),
+        h('li', null, 'Bei ', h('strong', null, 'Name'), ' eingeben: ', h('code', null, 'PUSH_CONFIG')),
+        h('li', null, 'Bei ', h('strong', null, 'Secret'), ' den Code einfügen → ', h('strong', null, 'Add secret'), '.'),
+        h('li', null, 'Testen: ', h('a', { class: 'link', href: WORKFLOW_URL, target: '_blank', rel: 'noopener' }, 'Workflow „Erinnerungen“'), ' → ', h('strong', null, 'Run workflow'), '. Nach ca. 1 Minute kommt eine Benachrichtigung.')),
+      box,
+      h('p', { class: 'muted small' }, 'GitHub startet zeitgesteuerte Abläufe manchmal 5–30 Minuten verspätet.'),
+    ],
+    footer: [
+      h('button', { class: 'btn', onclick: () => sheet.close() }, 'Fertig'),
+      h('button', { class: 'btn btn-primary', onclick: copy }, 'Code kopieren'),
+    ],
+    onClose: () => onDone?.(),
+  });
 }
 
 function openImportSheet(data, ctx) {

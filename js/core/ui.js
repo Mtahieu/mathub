@@ -73,6 +73,7 @@ const ICONS = {
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01',
   shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0',
   dot: 'M12 12h.01',
 };
 
@@ -265,6 +266,20 @@ export function segmented(options, value, onChange) {
     }, o.label)));
   };
   render(value);
+  return el;
+}
+
+/** Sterne-Bewertung. onChange(null) = Bewertung entfernt (erneutes Tippen auf denselben Stern). */
+export function starRating(value, onChange, { size = 30, readonly = false } = {}) {
+  let current = value || 0;
+  const el = h('div', { class: 'stars' + (readonly ? ' readonly' : ''), role: readonly ? 'img' : 'radiogroup', 'aria-label': `${current} von 5 Sternen` });
+  const render = () => el.replaceChildren(...[1, 2, 3, 4, 5].map((n) => (readonly
+    ? h('span', { class: 'star' + (n <= Math.round(current) ? ' on' : '') }, icon('star', size))
+    : h('button', {
+      type: 'button', class: 'star' + (n <= current ? ' on' : ''), 'aria-label': `${n} von 5 Sternen`,
+      onclick: () => { current = current === n ? 0 : n; render(); onChange?.(current || null); },
+    }, icon('star', size)))));
+  render();
   return el;
 }
 

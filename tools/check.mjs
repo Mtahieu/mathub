@@ -30,7 +30,8 @@ const appVersion = readFileSync(join(root, 'js/version.js'), 'utf8').match(/APP_
 if (swVersion !== appVersion) fail(`Version unterschiedlich: sw.js ${swVersion} ≠ js/version.js ${appVersion}`);
 
 // 3) Precache vollständig
-const precache = new Set([...sw.matchAll(/'\.\/([^']*)'/g)].map((m) => m[1]));
+const precacheBlock = sw.match(/const PRECACHE = \[([\s\S]*?)\];/)?.[1] || '';
+const precache = new Set([...precacheBlock.matchAll(/'\.\/([^']*)'/g)].map((m) => m[1]));
 const shipped = [
   ...jsFiles, ...walk(join(root, 'css')), ...walk(join(root, 'icons')),
   join(root, 'index.html'), join(root, 'manifest.webmanifest'),

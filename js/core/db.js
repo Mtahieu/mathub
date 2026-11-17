@@ -33,12 +33,12 @@ function upgradeSchema(db, oldVersion) {
 export function openDB() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
-    if (!('indexedDB' in window)) return reject(new Error('IndexedDB wird von diesem Browser nicht unterstützt.'));
+    if (!globalThis.indexedDB) return reject(new Error('IndexedDB wird von diesem Browser nicht unterstützt.'));
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = (ev) => upgradeSchema(req.result, ev.oldVersion);
     req.onsuccess = () => {
       const db = req.result;
-      db.onversionchange = () => { db.close(); location.reload(); };
+      db.onversionchange = () => { db.close(); if (globalThis.document) location.reload(); };
       resolve(db);
     };
     req.onerror = () => reject(req.error);

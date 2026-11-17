@@ -18,11 +18,14 @@ js/core/
   dates.js      Datums-Helfer (lokale Tages-Schlüssel)
   backup.js     Backup-Datei erstellen/teilen/einlesen
   update.js     Service-Worker-Registrierung + Update-Banner
+  push.js       Push einrichten (VAPID-Schlüssel lokal erzeugen, Abo, Code für GitHub-Secret)
+  reminders.js  Text der Erinnerungen aus den Tageszielen (läuft im Service Worker)
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          bereichsübergreifend: today, progress, calendar, more, settings
-  fitness/      training, nutrition, body
-tools/          check.mjs, bump-version.mjs
+  fitness/      training, nutrition, body, physio-catalog (Daten), ratings (Bewertungen)
+tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
+.github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
 
 ## Datenmodell
@@ -46,6 +49,8 @@ Aktuelle Typen:
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
 | item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |
 | item `food-fav` | `{name, kcal, protein}` |
+| item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |
+| kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
 
 ### Schema & Migrationen
 - Neuer Store/Index → `DB_VERSION` in `db.js` erhöhen und Block in `upgradeSchema()` ergänzen.
@@ -84,6 +89,17 @@ registerModule({
 3. Datei in `PRECACHE` in `sw.js` eintragen.
 4. `node tools/check.mjs`
 5. `node tools/bump-version.mjs X.Y.Z "Beschreibung"` → committen → pushen.
+
+## Push-Erinnerungen
+
+```
+GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ──▶ Service Worker auf dem Handy
+                                                                      └─ reminders.js liest IndexedDB → Text
+```
+- Zeiten: `REMINDER_TIMES` und cron-Zeilen in `.github/workflows/reminders.yml` (je Zeit eine Winter- und eine Sommerzeit-Zeile).
+- Secret `PUSH_CONFIG` = Code aus der App (Einstellungen → Erinnerungen). Mehrere Geräte: JSON-Array.
+- Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
+- GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
 
 ## Ideen für Erweiterungen
 - **Kalender/Termine:** `entries` type `event` (`{title, time, note}`) bzw. items kind `event` für Serien; Modul liefert `summarizeDay` + eigene Ansicht. Die Monatsansicht in `hub/calendar.js` zeigt Zusammenfassungen schon an.

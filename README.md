@@ -24,12 +24,14 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.1)
+## Funktionen (Version 0.2)
 
 | Bereich | Was du machen kannst |
 |---|---|
 | **Heute** | Tagesziele auf einen Blick, Schnell-Eingaben für Gewicht, Training, Mahlzeiten, Wasser, Schlaf; frühere Tage nachtragen |
 | **Training** | Übungen (Physio, Kraft, Mobilität, Cardio) mit Sätzen/Wiederholungen/Gewicht oder Zeit, Beschwerden 0–10, Wochenplan, Vorlagen |
+| **Physio-Katalog** | Übungen für die Hüfte nach FAI-OP mit Anleitung, Filtern und Sterne-Bewertung |
+| **Erinnerungen** | Push um 7:30 und 20:30 Uhr mit deinen offenen Tageszielen |
 | **Ernährung & Alltag** | Mahlzeiten mit Kalorien & Protein, Favoriten, Wasser, Schlaf mit Qualität |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |

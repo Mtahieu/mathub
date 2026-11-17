@@ -381,14 +381,35 @@ details.measures[open] summary { margin-bottom: 10px; }
 .sheet-foot .btn { flex: 1; }
 
 .toast {
-  position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px); z-index: 60;
-  transform: translate(-50%, 16px); opacity: 0; transition: .22s;
+  position: fixed; left: 0; right: 0; margin-inline: auto; width: max-content; bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px); z-index: 60;
+  transform: translateY(16px); opacity: 0; transition: .22s;
   background: var(--text); color: var(--bg); padding: 11px 16px; border-radius: 13px; font-weight: 650; font-size: .92rem;
   display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
 }
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.show { opacity: 1; transform: none; }
 .toast-action { background: none; border: 0; color: var(--accent); font-weight: 750; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
+
+/* ---------- Katalog & Bewertungen (0.2) ---------- */
+.stars.readonly { gap: 0; flex: none; }
+.stars.readonly .star { padding: 0; }
+.stars.readonly .star .icon { stroke-width: 2.4; }
+.level { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 2px; }
+.level i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); display: block; }
+.level i.on { background: var(--accent); }
+.chips.scroll { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none; }
+.chips.scroll::-webkit-scrollbar { display: none; }
+.chips.scroll .chip { flex: none; }
+.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.info-box { flex-direction: column; align-items: stretch; }
+.info-box summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.info-box summary::-webkit-details-marker { display: none; }
+.info-box summary .icon { color: var(--accent); flex: none; }
+.info-box[open] summary { margin-bottom: 8px; }
+.card.dim { opacity: .7; }
+.banner.small { font-size: .875rem; }
+.code-box { font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; word-break: break-all; min-height: 90px; }
+.howto { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }

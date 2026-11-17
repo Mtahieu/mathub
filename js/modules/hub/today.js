@@ -38,6 +38,8 @@ async function render(el, ctx) {
 
   const backup = await backupReminder();
   if (backup) el.append(backup);
+  const pushHint = await pushReminder();
+  if (pushHint) el.append(pushHint);
 
   // Fortschritt des Tages
   const ratio = score.ratio ?? 0;
@@ -87,6 +89,17 @@ function heroTitle(score, isToday) {
   if (score.done === score.total) return isToday ? 'Alles geschafft – stark!' : 'Alle Ziele erfüllt';
   const left = score.total - score.done;
   return `${isToday ? 'Noch' : 'Offen:'} ${left} ${left === 1 ? 'Ziel' : 'Ziele'}`;
+}
+
+async function pushReminder() {
+  if (!('PushManager' in window) || (await kv.get('push', null)) || (await kv.get('pushHintDismissed', false))) return null;
+  const el = h('div', { class: 'banner' },
+    icon('bell'),
+    h('a', { href: '#/einstellungen?s=push', style: { flex: 1, textDecoration: 'none' } },
+      h('strong', null, 'Erinnerungen einschalten'),
+      h('div', { class: 'small muted' }, 'Morgens Überblick, abends was noch offen ist.')),
+    h('button', { class: 'icon-btn small', 'aria-label': 'Ausblenden', onclick: async () => { await kv.set('pushHintDismissed', true); el.remove(); } }, icon('x', 18)));
+  return el;
 }
 
 async function backupReminder() {

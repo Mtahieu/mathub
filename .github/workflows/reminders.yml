@@ -1,0 +1,42 @@
+# Push-Erinnerungen für Mathub.
+# Sendet zu festen Zeiten ein LEERES Wecksignal an dein Handy; den Text erzeugt die App lokal.
+# Benötigt das Repo-Secret PUSH_CONFIG (in der App: Einstellungen → Erinnerungen → einrichten).
+#
+# Zeiten ändern: REMINDER_TIMES (Ortszeit Berlin) anpassen UND für jede Zeit zwei cron-Zeilen (UTC) eintragen:
+#   Winterzeit = Ortszeit − 1 h, Sommerzeit = Ortszeit − 2 h. Das Skript nimmt automatisch die passende.
+
+name: Erinnerungen
+
+on:
+  schedule:
+    - cron: '30 6 * * *'    # 07:30 Winterzeit
+    - cron: '30 5 * * *'    # 07:30 Sommerzeit
+    - cron: '30 19 * * *'   # 20:30 Winterzeit
+    - cron: '30 18 * * *'   # 20:30 Sommerzeit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Wecksignal senden
+        run: node tools/send-push.mjs
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          SCHEDULE: ${{ github.event.schedule }}
+          REMINDER_TIMES: '07:30,20:30'
+          APP_URL: 'https://mtahieu.github.io/mathub/'

@@ -1,7 +1,10 @@
-// Service Worker: macht Mathub offline-fähig und liefert Updates aus.
+// Service Worker (ES-Modul): macht Mathub offline-fähig, liefert Updates aus und zeigt Push-Erinnerungen.
 // Bei JEDER Änderung an App-Dateien VERSION erhöhen (tools/bump-version.mjs), sonst sieht das Handy das Update nicht.
 
-const VERSION = '0.1.0';
+import { buildReminder, slotForHour } from './js/core/reminders.js';
+import { kv } from './js/core/db.js';
+
+const VERSION = '0.2.0';
 const CACHE = `mathub-${VERSION}`;
 
 const PRECACHE = [
@@ -12,10 +15,13 @@ const PRECACHE = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
+  './icons/badge-96.png',
   './js/app.js',
   './js/version.js',
   './js/core/backup.js',
   './js/core/charts.js',
+  './js/core/push.js',
+  './js/core/reminders.js',
   './js/core/dates.js',
   './js/core/db.js',
   './js/core/events.js',
@@ -33,6 +39,8 @@ const PRECACHE = [
   './js/modules/hub/today.js',
   './js/modules/fitness/body.js',
   './js/modules/fitness/nutrition.js',
+  './js/modules/fitness/physio-catalog.js',
+  './js/modules/fitness/ratings.js',
   './js/modules/fitness/training.js',
 ];
 
@@ -75,5 +83,43 @@ self.addEventListener('fetch', (event) => {
     } catch (err) {
       return Response.error();
     }
+  })());
+});
+
+// ---------- Push-Erinnerungen ----------
+// Das Signal von GitHub ist leer; der Text entsteht hier aus den lokalen Daten.
+self.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
+    let n;
+    try {
+      n = await buildReminder(slotForHour(new Date().getHours()));
+      await kv.set('push:last', { at: Date.now(), title: n.title });
+    } catch (err) {
+      n = { title: 'Mathub', body: 'Schau kurz rein – deine Tagesziele warten.', url: './#/heute', tag: 'mathub' };
+    }
+    await self.registration.showNotification(n.title, {
+      body: n.body,
+      tag: n.tag,
+      renotify: true,
+      icon: './icons/icon-192.png',
+      badge: './icons/badge-96.png',
+      data: { url: n.url },
+    });
+  })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || './#/heute', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of wins) {
+      if (w.url.startsWith(self.registration.scope)) {
+        await w.focus();
+        if ('navigate' in w) await w.navigate(target).catch(() => {});
+        return;
+      }
+    }
+    await self.clients.openWindow(target);
   })());
 });

@@ -6,7 +6,7 @@ let registration = null;
 
 export function initUpdates() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').then((reg) => {
+  navigator.serviceWorker.register('./sw.js', { type: 'module', updateViaCache: 'none' }).then((reg) => {
     registration = reg;
     if (reg.waiting && navigator.serviceWorker.controller) showBanner(reg.waiting);
     reg.addEventListener('updatefound', () => {
@@ -20,9 +20,11 @@ export function initUpdates() {
     });
   }).catch((err) => console.warn('Service Worker nicht registriert:', err));
 
+  // Nur bei echten Updates neu laden – nicht, wenn der Service Worker beim ersten Start übernimmt.
+  const hadController = !!navigator.serviceWorker.controller;
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return;
+    if (reloading || !hadController) return;
     reloading = true;
     location.reload();
   });
