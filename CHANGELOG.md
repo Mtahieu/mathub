@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 – 2026-11-17
+
+- **Neuer Bereich „Job“** (Mehr → Job): täglicher Check-in mit drei Fragen auf einer 1–10-Skala mit Emojis – „Wie viel habe ich geleistet?“, „Wie zufrieden bin ich heute mit meinem Job?“, „Fühle ich mich gebraucht?“ – plus Highlight und Lowlight des Tages.
+- Überblick mit Ø 7 und 30 Tagen, Verlauf je Frage (30 Tage / 90 Tage / 1 Jahr), Liste der letzten Highlights & Lowlights.
+- **Schlaf & Zufriedenheit:** vergleicht die Job-Zufriedenheit nach genug und nach zu wenig Schlaf (ab 5 Tagen mit beiden Einträgen).
+- Auf „Heute“: Job-Kachel mit Schnellzugriff; an Werktagen zählt der Check-in ab heute als Tagesziel (frühere Tage und Serien bleiben unverändert). Diagramme auch unter „Fortschritt“, Tageszusammenfassung im Kalender.
+- Keine Datenmigration nötig: neuer Eintragstyp `job`.
+
 ## 0.2.0 – 2026-11-17
 
 - **Physio-Katalog „Hüfte nach FAI-OP“** (Training → Katalog): 29 Übungen für Beweglichkeit, Aktivierung, Rumpf, Kraft, Stabilität und Sportvorbereitung, mit Anleitung, Tipps und Hinweisen; Filter nach Schwerpunkt und Level; mit einem Tipp in die eigenen Übungen übernehmen.

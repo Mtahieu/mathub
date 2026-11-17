@@ -24,6 +24,7 @@ js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          bereichsübergreifend: today, progress, calendar, more, settings
   fitness/      training, nutrition, body, physio-catalog (Daten), ratings (Bewertungen)
+  job/          checkin (täglicher Job-Check-in)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
@@ -47,6 +48,7 @@ Aktuelle Typen:
 | `food` (1/Tag) | `{items:[{id, name, kcal, protein, t}]}` |
 | `water` (1/Tag) | `{ml}` |
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
+| `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |
 | item `food-fav` | `{name, kcal, protein}` |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |

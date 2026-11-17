@@ -4,6 +4,7 @@
 import { registerArea } from '../core/registry.js';
 
 registerArea({ id: 'fitness', title: 'Fitness', icon: 'dumbbell', order: 10 });
+registerArea({ id: 'job', title: 'Job', icon: 'briefcase', order: 20 });
 registerArea({ id: 'hub', title: 'Allgemein', icon: 'home', order: 90 });
 
 // Hub (bereichsübergreifend)
@@ -17,3 +18,6 @@ import './hub/settings.js';
 import './fitness/training.js';
 import './fitness/nutrition.js';
 import './fitness/body.js';
+
+// Bereich: Job
+import './job/checkin.js';
