@@ -1,7 +1,7 @@
 {
   "name": "Mathub",
   "short_name": "Mathub",
-  "description": "Persönlicher Hub – Fitness, Fortschritt und mehr. Alle Daten bleiben auf deinem Gerät.",
+  "description": "Persönlicher Hub – Termine, Gesundheit, Fortschritt und mehr. Alle Daten bleiben auf deinem Gerät.",
   "lang": "de",
   "start_url": "./#/heute",
   "scope": "./",

@@ -22,9 +22,10 @@ js/core/
   reminders.js  Text der Erinnerungen aus den Tageszielen (läuft im Service Worker)
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
-  hub/          bereichsübergreifend: today, progress, calendar, more, settings
-  fitness/      training, nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
-                sleep, body, physio-catalog (Daten), ratings (Bewertungen)
+  hub/          bereichsübergreifend: today, progress, calendar (Monatsübersicht), more, settings
+  termine/      termine (Google Kalender: Agenda, Heute-Karte), google-api (Anmeldung & Abgleich)
+  fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
+                sleep, body, supplements, supplement-data, ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
@@ -45,18 +46,21 @@ Aktuelle Typen:
 | type / kind | data |
 |---|---|
 | `body` (1/Tag) | `{weight, bodyFat, measures:{chest,…}, note}` |
-| `exercise` | `{exerciseId, sets:[{reps, weight, seconds}], done, pain, note}` |
+| `exercise` | `{exerciseId, sets:[…], done, pain, note}` – **nicht mehr genutzt** seit 0.8.0 (Training entfernt, Altdaten bleiben erhalten) |
 | `food` (1/Tag) | `{items:[{id, name, kcal, protein, t}]}` |
 | `water` (1/Tag) | `{ml}` – **nicht mehr genutzt** seit 0.3.0 (Altdaten bleiben erhalten) |
 | `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
 | `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
-| item `exercise` | `{name, category, mode, weighted, targetSets, targetReps, targetSeconds, days[0–6], trackPain, notes, archived}` |
+| item `exercise` | **nicht mehr genutzt** seit 0.8.0 |
 | `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
 | `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
 | `supplements` (1/Tag) | `{taken:{itemId: Zeitstempel}}` |
 | item `supplement` | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
-| item `rating` | `{key, stars, history:[{date, stars}]}` – key = `catalogId` oder Übungs-id |
+| item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
+| kv `gcal` | Google Kalender: `{clientId, account, calendars:[{id, name, color, on, primary}], lastSync, lastError, needsLogin}` |
+| kv `gcal:events` | zuletzt geladene Termine `{from, to, syncedAt, list:[{id, cal, title, start, end, allDay, loc, link, desc}]}` |
+| kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. `tmp:gcal:token` = Zugriffs-Token, ca. 1 h gültig) |
 | kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
 
 ### Schema & Migrationen
@@ -85,11 +89,13 @@ registerModule({
   summarizeDay(date, data) { return ['Kurzer Text'] }, // Kalender-Tagesdetails
   reminderNote(slot, date) { return 'Zeile' },         // Zusatzzeile in Push-Erinnerungen (async ok)
   charts: [{ id, title, render(el, { from, to, data }) {} }],  // Seite „Fortschritt“
+  loadData(from, to) { return … },                     // Zusatzdaten außerhalb von entries → data.ext[id] (async ok)
+  launch() {},                                          // beim Start vor dem Router (z. B. Rückkehr von Google-Anmeldung)
 });
 ```
 
 `ctx` in `render`: `{ path, query, date, navigate(path, query, {replace}), refresh() }`.
-`data` (aus `loadDays`): `{ get(date, type), first(date, type), byDay, exercises, itemsOf(kind), settings }`.
+`data` (aus `loadDays`): `{ get(date, type), first(date, type), byDay, itemsOf(kind), ext, settings }`.
 
 ### Neues Modul hinzufügen – Checkliste
 1. Datei unter `js/modules/<bereich>/` anlegen.
@@ -109,7 +115,20 @@ GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ─�
 - Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
 - GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
 
+## Google Kalender
+
+```
+Mathub ──Weiterleitung (Client-ID, scope calendar.readonly)──▶ accounts.google.com
+   ▲                                                              │
+   └──────── #access_token=… (ca. 1 h gültig) ◀───────────────────┘
+Mathub ──fetch mit Bearer-Token──▶ www.googleapis.com/calendar/v3 ──▶ kv 'gcal:events'
+```
+- Kein Server, keine Bibliothek: OAuth-„Token“-Ablauf per Weiterleitung. `launch()` des Moduls liest das Token aus dem URL-Fragment, bevor der Router startet; `state` schützt vor fremden Weiterleitungen.
+- Die **Client-ID** legt der Nutzer in seiner eigenen Google Cloud Console an (Anleitung in der App) und gibt sie in der App ein – sie steht nicht im Repo. Autorisierte Quelle `https://mtahieu.github.io`, Weiterleitungs-URI `https://mtahieu.github.io/mathub/`.
+- Ohne Server gibt es kein Refresh-Token. Ist das Token abgelaufen, meldet die Seite „Termine“ still neu an (`prompt=none`, höchstens alle 5 Min.); verlangt Google eine Eingabe, erscheint „Anmelden“.
+- Abgleich: 30 Tage zurück bis 120 Tage voraus, alle 10 Min. beim Öffnen von „Termine“ oder „Heute“ (solange das Token gilt). Termine stehen danach offline, in der Monatsübersicht und in der Morgen-Erinnerung zur Verfügung.
+
 ## Ideen für Erweiterungen
-- **Kalender/Termine:** `entries` type `event` (`{title, time, note}`) bzw. items kind `event` für Serien; Modul liefert `summarizeDay` + eigene Ansicht. Die Monatsansicht in `hub/calendar.js` zeigt Zusammenfassungen schon an.
+- **Termine anlegen** direkt in Mathub (Scope `calendar.events`) – aktuell öffnet „+“ den Google Kalender.
 - **Erinnerungen:** Notification API (nur bei geöffneter/installierter App zuverlässig).
 - **Weitere Bereiche:** eigener Ordner `js/modules/<bereich>/`, eigener `registerArea`.

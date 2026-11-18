@@ -33,10 +33,15 @@ export const getMoreItems = () => modules.filter((m) => m.nav?.more).sort((a, b)
  * Wird an goals(), summarizeDay(), todayCard() und charts übergeben.
  */
 export async function loadDays(from, to) {
-  const [list, allItems] = await Promise.all([entries.range(from, to), items.all()]);
+  const [list, allItems, extList] = await Promise.all([
+    entries.range(from, to),
+    items.all(),
+    Promise.all(modules.filter((m) => m.loadData).map(async (m) => {
+      try { return [m.id, await m.loadData(from, to)]; } catch (err) { console.error(err); return [m.id, null]; }
+    })),
+  ]);
   const byKind = new Map();
   for (const it of allItems) (byKind.get(it.kind) || byKind.set(it.kind, []).get(it.kind)).push(it);
-  const exercises = byKind.get('exercise') || [];
   const byDay = new Map();
   for (const e of list) {
     let d = byDay.get(e.date);
@@ -44,12 +49,24 @@ export async function loadDays(from, to) {
     (d[e.type] ||= []).push(e);
   }
   return {
-    from, to, byDay, exercises,
+    from, to, byDay,
     itemsOf: (kind) => byKind.get(kind) || [],
+    ext: Object.fromEntries(extList),   // Zusatzdaten der Module (loadData), z. B. ext.termine
     settings: getSettingsSync(),
     get: (date, type) => byDay.get(date)?.[type] || [],
     first: (date, type) => byDay.get(date)?.[type]?.[0] || null,
   };
+}
+
+/**
+ * Läuft beim Start vor dem Router (z. B. Rückkehr von einer Anmeldung mit Daten im URL-Fragment).
+ * Ein Modul kann mit launch() → true signalisieren, dass es die URL bereits angepasst hat.
+ */
+export async function runLaunchHooks() {
+  for (const m of modules) {
+    if (!m.launch) continue;
+    try { await m.launch(); } catch (err) { console.error(err); }
+  }
 }
 
 /** Sammelt die Tagesziele aller Module: [{id, module, label, detail, done, progress, route}] */

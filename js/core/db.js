@@ -3,8 +3,8 @@
 // Stores:
 //   entries  – alles, was einem Tag zugeordnet ist: {id, type, date:'YYYY-MM-DD', data:{…}, createdAt, updatedAt}
 //              Neue Funktionen brauchen meist nur einen neuen `type` – keine Schema-Änderung.
-//   items    – Stammdaten/Konfiguration: {id, kind, …felder, createdAt, updatedAt} (z. B. kind:'exercise')
-//   kv       – Schlüssel/Wert (Einstellungen, Metadaten): {key, value}
+//   items    – Stammdaten/Konfiguration: {id, kind, …felder, createdAt, updatedAt} (z. B. kind:'supplement')
+//   kv       – Schlüssel/Wert (Einstellungen, Metadaten): {key, value} – Schlüssel mit 'tmp:' landen nicht im Backup
 //
 // Schema-Änderungen (neue Stores/Indizes): DB_VERSION erhöhen + Block in upgradeSchema().
 // Datenumbauten (Felder umbenennen o. ä.): DATA_VERSION erhöhen + Eintrag in MIGRATIONS.
@@ -177,7 +177,7 @@ export async function exportAll() {
     exportedAt: new Date().toISOString(),
     entries: e,
     items: i,
-    kv: k,
+    kv: k.filter((x) => !String(x.key).startsWith('tmp:')),   // tmp:… = kurzlebig (z. B. Anmelde-Token), nicht ins Backup
   };
 }
 

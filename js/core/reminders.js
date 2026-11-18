@@ -31,7 +31,7 @@ export async function buildReminder(slot = slotForHour(new Date().getHours())) {
   if (!sc.total) {
     const notes = await moduleNotes(slot, t);
     if (notes.length) return { title: `Hallo${name}!`, body: notes.join('\n'), url, tag: 'mathub-' + slot };
-    return { title: `Hallo${name}!`, body: 'Lege in Mathub Übungen und Ziele fest, dann erinnere ich dich gezielt.', url, tag: 'mathub-' + slot };
+    return { title: `Hallo${name}!`, body: 'Lege in Mathub deine Ziele fest, dann erinnere ich dich gezielt.', url, tag: 'mathub-' + slot };
   }
 
   if (slot === 'morgen') {

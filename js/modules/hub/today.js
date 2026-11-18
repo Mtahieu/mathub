@@ -66,9 +66,9 @@ async function render(el, ctx) {
         icon('chevR', 18))))));
   } else {
     el.append(card('Los geht’s', { iconName: 'info' },
-      h('p', { class: 'muted' }, 'Lege Übungen an und trage deine Ziele ein, dann erscheinen hier deine Tagesziele.'),
+      h('p', { class: 'muted' }, 'Plane deine Woche, lege Supplements an oder setze Ziele, dann erscheinen hier deine Tagesziele.'),
       h('div', { class: 'btn-row' },
-        h('a', { class: 'btn', href: '#/training?v=uebungen' }, 'Übungen'),
+        h('a', { class: 'btn', href: '#/ernaehrung' }, 'Ernährung'),
         h('a', { class: 'btn', href: '#/einstellungen' }, 'Ziele'))));
   }
 

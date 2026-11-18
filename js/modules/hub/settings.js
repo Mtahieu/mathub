@@ -165,7 +165,7 @@ async function render(el, ctx) {
     h('button', {
       class: 'btn btn-danger',
       onclick: async () => {
-        if (!await confirmDialog('Alle Einträge, Übungen und Einstellungen auf diesem Gerät werden gelöscht. Mach vorher ein Backup!', { okLabel: 'Alles löschen', danger: true })) return;
+        if (!await confirmDialog('Alle Einträge, Listen und Einstellungen auf diesem Gerät werden gelöscht. Mach vorher ein Backup!', { okLabel: 'Alles löschen', danger: true })) return;
         await clearAll();
         location.reload();
       },
@@ -269,7 +269,7 @@ function openSetupSheet(config, onDone) {
 }
 
 function openImportSheet(data, ctx) {
-  const counts = `${data.entries.length} Einträge, ${(data.items || []).length} Übungen/Favoriten, gesichert am ${new Date(data.exportedAt).toLocaleString('de-DE')}`;
+  const counts = `${data.entries.length} Einträge, ${(data.items || []).length} Listen-Einträge, gesichert am ${new Date(data.exportedAt).toLocaleString('de-DE')}`;
   const go = async (mode) => {
     if (mode === 'replace' && !await confirmDialog('Alle aktuellen Daten werden durch das Backup ersetzt.', { okLabel: 'Ersetzen', danger: true })) return;
     try {
