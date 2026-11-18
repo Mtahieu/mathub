@@ -6,6 +6,7 @@ import { registerArea } from '../core/registry.js';
 registerArea({ id: 'organisation', title: 'Organisation', icon: 'calendar', order: 5 });
 registerArea({ id: 'fitness', title: 'Gesundheit', icon: 'heart', order: 10 });
 registerArea({ id: 'job', title: 'Job', icon: 'briefcase', order: 20 });
+registerArea({ id: 'freizeit', title: 'Freizeit', icon: 'film', order: 30 });
 registerArea({ id: 'hub', title: 'Allgemein', icon: 'home', order: 90 });
 
 // Hub (bereichsübergreifend)
@@ -26,3 +27,6 @@ import './fitness/body.js';
 
 // Bereich: Job
 import './job/checkin.js';
+
+// Bereich: Freizeit
+import './freizeit/filme.js';

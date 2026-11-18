@@ -1,6 +1,6 @@
 # Mathub
 
-Persönlicher Hub als installierbare Web-App (PWA): Termine aus dem Google Kalender, Ernährung, Schlaf, Supplements, Körperwerte, Job-Check-in, Serien und Verlaufsdiagramme.
+Persönlicher Hub als installierbare Web-App (PWA): Termine aus dem Google Kalender, Ernährung, Schlaf, Supplements, Körperwerte, Job-Check-in, Filme-Merkliste, Serien und Verlaufsdiagramme.
 
 **Datenschutz:** Mathub hat keinen Server und kein Konto. Alle Einträge liegen ausschließlich im Speicher deines Browsers auf deinem Handy (IndexedDB). Termine holt die App direkt bei Google (nur Lesezugriff) und speichert sie ebenfalls nur lokal. Dieses Repository enthält nur den Programmcode, niemals deine Daten.
 
@@ -24,7 +24,7 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.8)
+## Funktionen (Version 0.9)
 
 | Bereich | Was du machen kannst |
 |---|---|
@@ -36,6 +36,7 @@ Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die D
 | **Supplements** | Arsenal & Einnahmeplan, tägliches Abhaken, Kombi-Check mit Wirkung & Wechselwirkungen, recherchiertes Wissen |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
+| **Filme** | Merkliste mit „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
 | **Monatsübersicht** | Monatsansicht mit Zielerfüllung, Tagesdetails und Terminen |
 | **Einstellungen** | Profil, Ziele inkl. Richtwert-Rechner, Serien-Schwelle, Hell/Dunkel, Backup |
 

@@ -25,6 +25,6 @@ registerModule({
   area: 'hub',
   title: 'Mehr',
   order: 90,
-  nav: { tab: 5, label: 'Mehr', icon: 'more' },
+  nav: { tab: 9, label: 'Mehr', icon: 'more' },
   routes: [{ path: '/mehr', render }],
 });
