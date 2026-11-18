@@ -13,4 +13,8 @@ Stand: November 2026. Inhalte in `js/modules/fitness/supplement-data.js` sind zu
 | L-Theanin und Schlaf (systematisches Review, 13 Studien) | Nutr Neurosci 2026 – https://pubmed.ncbi.nlm.nih.gov/41176609/ |
 | Omega-3 und Vorhofflimmern (dosisabhängig, < 1,5 g/Tag kein erhöhtes Risiko) | FARI-Metaanalyse, Pressemitteilung – https://www.eurekalert.org/news-releases/1138634 |
 | Zink-induzierter Kupfermangel | Medsafe Prescriber Update 2020 – https://www.medsafe.govt.nz/profs/PUArticles/March2020/Interacting-elements-zinc-induced-copper-deficiency.html |
+| Höchstmenge Vitamin B6 (0,9 mg/Tag aus NEM, ab 15 Jahren; ersetzt 3,5 mg von 2021) | BfR: Aktualisierung 2024 der Höchstmengenvorschläge für Vitamin B6 – https://mobil.bfr.bund.de:443/cm/343/aktualisierung-2024-hoechstmengenvorschlaege-fuer-vitamin-b6-in-lebensmitteln-inklusive-nahrungsergaenzungsmitteln.pdf |
+| Vitamin B6: tolerierbare Gesamtzufuhr 12 mg/Tag, periphere Neuropathie als kritischer Effekt | EFSA NDA Panel, EFSA Journal 2023 – https://pmc.ncbi.nlm.nih.gov/articles/PMC10189633/ |
+| Vitamin B6: Referenzwerte 1,4 mg (Frauen) / 1,6 mg (Männer) | DGE FAQ Vitamin B6 (2019) – https://www.dge.de/fileadmin/dok/gesunde-ernaehrung/faq/DGE-FAQ-Vitamin_B6-2019.pdf |
+| Vitamin B6: Nutzen von Präparaten, Lebensmittelquellen | Verbraucherzentrale – https://www.verbraucherzentrale.de/wissen/lebensmittel/nahrungsergaenzungsmittel/gehirnvitamin-b6-braucht-es-wirklich-ein-extrapraeparat-8230 |
 | Kreatin (3–5 g/Tag, Sicherheit, Vegetarier profitieren) | ISSN Position Stand, Kreider et al. 2017 – https://pubmed.ncbi.nlm.nih.gov/28615996/ |

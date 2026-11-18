@@ -27,6 +27,7 @@ js/modules/
   fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
                 sleep, body, supplements, supplement-data, ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
+  freizeit/     filme (Merkliste & Entscheidungshilfe), filme-data (Startliste & Infos)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
@@ -58,6 +59,8 @@ Aktuelle Typen:
 | `supplements` (1/Tag) | `{taken:{itemId: Zeitstempel}}` |
 | item `supplement` | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
+| item `film` | `{catalogId?, title, year?, runtime?, moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
+| kv `filme:heute` | `{date, filmId}` – Entscheidung für den Abend; kv `filme:seeded` = Startliste angelegt |
 | kv `gcal` | Google Kalender: `{clientId, account, calendars:[{id, name, color, on, primary}], lastSync, lastError, needsLogin}` |
 | kv `gcal:events` | zuletzt geladene Termine `{from, to, syncedAt, list:[{id, cal, title, start, end, allDay, loc, link, desc}]}` |
 | kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. `tmp:gcal:token` = Zugriffs-Token, ca. 1 h gültig) |

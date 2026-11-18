@@ -273,18 +273,19 @@ function renderKnowledge(el) {
     h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, s.name), h('span', { class: 'list-sub clamp' }, s.effect)),
     evidenceBadge(s.evidence)))));
   el.append(card('Einordnung', { iconName: 'info' },
-    h('p', { class: 'small' }, 'Nahrungsergänzung ersetzt keine ausgewogene Ernährung; ein Nutzen ist meist nur bei Mangel oder bestimmten Zielen belegt. Für Deutschland empfiehlt das BfR Höchstmengen pro Tag aus Nahrungsergänzung (z. B. Magnesium 250 mg, Zink 6,5 mg, Vitamin D 20 µg).'),
+    h('p', { class: 'small' }, 'Nahrungsergänzung ersetzt keine ausgewogene Ernährung; ein Nutzen ist meist nur bei Mangel oder bestimmten Zielen belegt. Für Deutschland empfiehlt das BfR Höchstmengen pro Tag aus Nahrungsergänzung (z. B. Magnesium 250 mg, Zink 6,5 mg, Vitamin B6 0,9 mg, Vitamin D 20 µg).'),
     h('p', { class: 'muted small' }, 'Allgemeine Informationen, keine medizinische Beratung.')));
   el.append(sectionTitle('Empfehlenswert für deine Ziele'));
   el.append(block('Gut begründet bei Muskelaufbau & pflanzenbetonter Ernährung', 'trophy',
     ['kreatin', 'b12', 'omega3', 'vitd', 'magnesium'].map(supplementById)));
   el.append(sectionTitle('Eher verzichtbar oder mit Vorsicht'));
-  el.append(block('Ohne Mangel kaum Nutzen / Risiken beachten', 'shield', ['biotin', 'zink', 'ala'].map(supplementById)));
+  el.append(block('Ohne Mangel kaum Nutzen / Risiken beachten', 'shield', ['biotin', 'zink', 'b6', 'ala'].map(supplementById)));
   el.append(card('Was eher nicht empfohlen wird', { iconName: 'info' },
     h('ul', { class: 'caution-list' },
       h('li', null, 'Biotin hochdosiert „für Haare“ ohne Mangel – kaum Nutzen, dafür verfälschte Laborwerte.'),
       h('li', null, 'Zink dauerhaft über 6,5 mg/Tag aus Präparaten – Risiko für Kupfermangel.'),
       h('li', null, 'Magnesium über 250 mg/Tag aus Präparaten – häufig Durchfall.'),
+      h('li', null, 'Vitamin B6 hochdosiert (auch versteckt in Magnesium- oder B-Komplex-Präparaten) – über längere Zeit Risiko für Nervenschäden.'),
       h('li', null, 'Alpha-Liponsäure ohne medizinischen Grund – geringe Effekte; bei Diabetes-Medikamenten nur nach Rücksprache.'),
       h('li', null, 'Omega-3 hochdosiert über 1,5 g/Tag ohne ärztlichen Rat.'))));
   el.append(block('Alle Mittel im Katalog', 'list', SUPPLEMENTS));

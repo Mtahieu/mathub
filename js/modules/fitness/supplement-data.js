@@ -1,5 +1,5 @@
 // Wissensbasis Nahrungsergänzungsmittel – allgemeine Informationen, keine medizinische Beratung.
-// Stand der Recherche: November 2026. Quellen u. a.: BfR-Höchstmengenvorschläge (2024), FDA-Sicherheitshinweis Biotin,
+// Stand der Recherche: November 2026. Quellen u. a.: BfR-Höchstmengenvorschläge (2024, inkl. Vitamin B6), EFSA-UL Vitamin B6 (2023), FDA-Sicherheitshinweis Biotin,
 // ISSN Position Stand Kreatin, Meta-Analysen zu Alpha-Liponsäure, L-Theanin und Omega-3 (siehe docs/SUPPLEMENTS.md).
 // IDs nie ändern – das Arsenal (items kind 'supplement') verweist darauf.
 
@@ -77,6 +77,19 @@ export const SUPPLEMENTS = [
     tags: ['immun', 'haut'],
   },
   {
+    id: 'b6', name: 'Vitamin B6', emoji: '🥔', evidence: 1, slot: 'mahlzeit',
+    dose: 'Bedarf 1,4 mg (Frauen) bzw. 1,6 mg (Männer) pro Tag (DGE) – BfR: max. 0,9 mg pro Tag aus Nahrungsergänzung',
+    effect: 'Wasserlösliches B-Vitamin für den Eiweiß- und Aminosäurestoffwechsel, Nerven, Blutbildung und das Immunsystem. Steckt in Hülsenfrüchten, Vollkorn, Kartoffeln, Nüssen, Bananen, Fisch und Fleisch – auch bei veganer Ernährung wird der Bedarf meist gut gedeckt. Ein Nutzen von Präparaten ist ohne nachgewiesenen Mangel kaum belegt.',
+    timing: 'Zur Mahlzeit oder jederzeit. Meist schon in Magnesium-, Zink- oder B-Komplex-Präparaten enthalten – Gesamtmenge zusammenrechnen.',
+    cautions: [
+      'Zu viel über längere Zeit kann Nerven schädigen (Kribbeln, Taubheit in Händen und Füßen) – auch schon bei Mengen deutlich unter 50 mg/Tag beschrieben. Beschwerden bilden sich nach dem Absetzen meist zurück.',
+      'BfR empfiehlt seit 2024 höchstens 0,9 mg pro Tag aus Nahrungsergänzung; die EFSA setzt die tolerierbare Gesamtzufuhr bei 12 mg/Tag an. Viele Kombipräparate liegen darüber.',
+      'Hochdosiert Wechselwirkungen möglich, u. a. mit Levodopa (Parkinson) und einigen Mitteln gegen Epilepsie – ärztlich abklären.',
+      'Ein Mangel ist selten; gefährdet sind z. B. Menschen mit hohem Alkoholkonsum, Nierenerkrankungen oder bestimmten Medikamenten (z. B. Isoniazid).',
+    ],
+    tags: ['nerven', 'stoffwechsel'],
+  },
+  {
     id: 'omega3', name: 'Omega-3 (EPA/DHA)', emoji: '🐟', evidence: 2, slot: 'mahlzeit',
     dose: 'üblich 250–1.000 mg EPA+DHA pro Tag',
     effect: 'Für Herz, Gehirn und Entzündungsprozesse. Wer selten fetten Seefisch isst (oder vegan lebt), erreicht kaum Mengen wie Fischesser – Algenöl ist die pflanzliche Alternative.',
@@ -131,6 +144,10 @@ export const PAIRS = [
   { a: 'biotin', b: 'zink', type: 'good', text: 'Häufige „Haut & Haare“-Kombi; ohne Mangel ist der Nutzen allerdings kaum belegt.' },
   { a: 'kreatin', b: 'magnesium', type: 'good', text: 'Passen zum Muskelaufbau-Ziel und vertragen sich problemlos.' },
   { a: 'theanin', b: 'kreatin', type: 'good', text: 'Keine Wechselwirkungen bekannt.' },
+  { a: 'magnesium', b: 'b6', type: 'warn', text: 'Klassische Kombi (oft in einem Präparat) – ein Zusatznutzen ist kaum belegt. Auf die B6-Menge achten: BfR empfiehlt max. 0,9 mg/Tag aus Nahrungsergänzung, viele Magnesium+B6-Produkte liegen darüber.' },
+  { a: 'b12', b: 'b6', type: 'good', text: 'Vertragen sich problemlos; B12 ist bei veganer Ernährung wichtig, B6 meist schon über das Essen gedeckt. Bei B-Komplex-Präparaten die B6-Menge prüfen.' },
+  { a: 'zink', b: 'b6', type: 'good', text: 'Keine Wechselwirkungen bekannt – bei Kombipräparaten die Gesamtmengen beider Stoffe prüfen.' },
+  { a: 'biotin', b: 'b6', type: 'good', text: 'Keine Wechselwirkungen; stecken oft zusammen in „Haut & Haare“- oder B-Komplex-Präparaten – Mengen addieren.' },
 ];
 
 /** Analyse einer Auswahl: Wirkungen, Zeitplan, Hinweise. */
@@ -143,7 +160,7 @@ export function analyzeCombo(ids, { fasting = true } = {}) {
   const effects = [];
   const tagText = {
     muskel: 'Muskel & Training', schlaf: 'Entspannung & Schlaf', stress: 'Stress', fokus: 'Fokus', stoffwechsel: 'Stoffwechsel',
-    haut: 'Haut & Haare', immun: 'Immunsystem', herz: 'Herz', gehirn: 'Gehirn', knochen: 'Knochen', vegan: 'Versorgung bei veganer Ernährung',
+    nerven: 'Nerven', haut: 'Haut & Haare', immun: 'Immunsystem', herz: 'Herz', gehirn: 'Gehirn', knochen: 'Knochen', vegan: 'Versorgung bei veganer Ernährung',
   };
   const tags = new Map();
   for (const s of list) for (const t of s.tags) tags.set(t, [...(tags.get(t) || []), s.name]);
@@ -151,6 +168,7 @@ export function analyzeCombo(ids, { fasting = true } = {}) {
   const notes = [];
   if (set.has('biotin')) notes.push({ type: 'warn', text: 'Biotin vor Blutabnahmen pausieren und das Labor informieren (Schilddrüse, Troponin u. a. können verfälscht sein).' });
   if (set.has('zink')) notes.push({ type: 'warn', text: 'Zink: max. 6,5 mg/Tag aus Nahrungsergänzung (BfR); dauerhaft höher dosiert droht Kupfermangel.' });
+  if (set.has('b6')) notes.push({ type: 'warn', text: 'Vitamin B6: max. 0,9 mg/Tag aus Nahrungsergänzung (BfR 2024); B6 aus allen Präparaten zusammenrechnen – zu viel kann Nerven schädigen.' });
   if (set.has('magnesium')) notes.push({ type: 'info', text: 'Magnesium: max. 250 mg/Tag aus Nahrungsergänzung (BfR), auf 2 Einnahmen verteilen.' });
   if (fasting && set.has('omega3')) notes.push({ type: 'info', text: 'Omega-3 und andere fettlösliche Mittel zur ersten Mahlzeit nach dem Fasten.' });
   if (fasting && set.has('ala')) notes.push({ type: 'good', text: 'Alpha-Liponsäure passt ins Fastenfenster: kurz vor dem Fastenbrechen nehmen.' });

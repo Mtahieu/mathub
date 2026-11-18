@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.1 – 2026-11-18
+
+- **Fortschritt** ist jetzt unter **Mehr → Allgemein** statt als eigener Tab; die Tab-Leiste hat wieder 5 Einträge (Heute, Termine, Ernährung, Filme, Mehr).
+- Die Serien-Flamme oben auf „Heute“ führt direkt zum Fortschritt.
+
+## 0.9.0 – 2026-11-18
+
+- **Neuer Tab „Filme“** (Bereich Freizeit):
+  - Startliste: The Lobster, Poor Things, Lammbock, Sinners, The Substance – mit Jahr, Laufzeit, Regie, Besetzung, Kurzbeschreibung, Stimmung und Intensität. Eigene Filme hinzufügen, bearbeiten, löschen.
+  - **Gesehen** mit einem Tipp abhaken (mit „Rückgängig“); gesehene Filme wandern nach unten, mit Datum und Sterne-Bewertung.
+  - **„Hilf mir zu entscheiden!“** ab 2 ausgewählten Filmen: Stimmung (Lachen, Gruseln, Nachdenken, Skurril, Spannung), Zeit (max. 2 Std.) und Energie (müde/hellwach) abfragen, dann wird unter den passendsten Filmen ausgelost – mit Begründung und Chancen. Oder reiner Zufall.
+  - Der Gewinner steht als „Heute Abend“ auf der Filme-Seite und auf „Heute“; gesehene Filme erscheinen in der Monatsübersicht.
+
+## 0.8.1 – 2026-11-18
+
+- **Supplements: Vitamin B6** im Katalog (Gesundheit → Supplements): Wirkung, Lebensmittelquellen, Studienlage, Bedarf (DGE 1,4/1,6 mg), aktuelle BfR-Höchstmenge 0,9 mg/Tag aus Nahrungsergänzung (2024, früher 3,5 mg), EFSA-Obergrenze 12 mg/Tag und Warnung vor Nervenschäden bei Überdosierung.
+- Kombi-Check kennt B6 mit Magnesium (Vorsicht: viele Mg+B6-Präparate über der BfR-Höchstmenge), B12, Zink und Biotin; neuer Wirkungsbereich „Nerven“.
+- Quellen ergänzt in docs/SUPPLEMENTS.md.
+
 ## 0.8.0 – 2026-11-18
 
 - **Neues Modul „Termine“ – dein Google Kalender in Mathub** (Tab unten, ersetzt „Training“):
