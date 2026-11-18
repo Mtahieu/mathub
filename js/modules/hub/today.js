@@ -32,7 +32,7 @@ async function render(el, ctx) {
 
   el.append(h('header', { class: 'page-head' },
     h('div', null, h('div', { class: 'eyebrow' }, greeting()), h('h1', null, 'Mathub')),
-    h('div', { class: 'streak-pill', title: 'Aktuelle Serie' }, icon('flame', 18), h('span', null, streak.current))));
+    h('a', { class: 'streak-pill', href: '#/fortschritt', title: 'Aktuelle Serie – zum Fortschritt', 'aria-label': `Serie ${streak.current} – Fortschritt öffnen` }, icon('flame', 18), h('span', null, streak.current))));
 
   el.append(dateNav(ctx));
 

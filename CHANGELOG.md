@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1 – 2026-11-18
+
+- **Fortschritt** ist jetzt unter **Mehr → Allgemein** statt als eigener Tab; die Tab-Leiste hat wieder 5 Einträge (Heute, Termine, Ernährung, Filme, Mehr).
+- Die Serien-Flamme oben auf „Heute“ führt direkt zum Fortschritt.
+
 ## 0.9.0 – 2026-11-18
 
 - **Neuer Tab „Filme“** (Bereich Freizeit):
@@ -7,7 +12,6 @@
   - **Gesehen** mit einem Tipp abhaken (mit „Rückgängig“); gesehene Filme wandern nach unten, mit Datum und Sterne-Bewertung.
   - **„Hilf mir zu entscheiden!“** ab 2 ausgewählten Filmen: Stimmung (Lachen, Gruseln, Nachdenken, Skurril, Spannung), Zeit (max. 2 Std.) und Energie (müde/hellwach) abfragen, dann wird unter den passendsten Filmen ausgelost – mit Begründung und Chancen. Oder reiner Zufall.
   - Der Gewinner steht als „Heute Abend“ auf der Filme-Seite und auf „Heute“; gesehene Filme erscheinen in der Monatsübersicht.
-- Tab-Leiste hat jetzt 6 Einträge.
 
 ## 0.8.1 – 2026-11-18
 

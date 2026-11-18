@@ -103,7 +103,7 @@ p { margin: 0; }
 
 .hero { flex-direction: row; align-items: center; gap: 18px; }
 .hero-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
-.streak-pill {
+.streak-pill { text-decoration: none;
   display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 99px;
   background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); font-weight: 750; font-variant-numeric: tabular-nums;
 }

@@ -35,7 +35,7 @@ Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die D
 | **Schlaf** | Stunden & Qualität der letzten Nacht |
 | **Supplements** | Arsenal & Einnahmeplan, tägliches Abhaken, Kombi-Check mit Wirkung & Wechselwirkungen, recherchiertes Wissen |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
-| **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
+| **Fortschritt** (unter Mehr) | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
 | **Filme** | Merkliste mit „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
 | **Monatsübersicht** | Monatsansicht mit Zielerfüllung, Tagesdetails und Terminen |
 | **Einstellungen** | Profil, Ziele inkl. Richtwert-Rechner, Serien-Schwelle, Hell/Dunkel, Backup |

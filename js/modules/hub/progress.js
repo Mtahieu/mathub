@@ -97,6 +97,7 @@ registerModule({
   area: 'hub',
   title: 'Fortschritt',
   order: 50,
-  nav: { tab: 4, label: 'Fortschritt', icon: 'chart' },
+  description: 'Serien, Zielquoten, Meilensteine & Diagramme',
+  nav: { more: 1, icon: 'chart' },
   routes: [{ path: '/fortschritt', render }],
 });
