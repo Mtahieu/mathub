@@ -3,7 +3,6 @@
 
 import { registerArea } from '../core/registry.js';
 
-registerArea({ id: 'organisation', title: 'Organisation', icon: 'calendar', order: 5 });
 registerArea({ id: 'fitness', title: 'Gesundheit', icon: 'heart', order: 10 });
 registerArea({ id: 'job', title: 'Job', icon: 'briefcase', order: 20 });
 registerArea({ id: 'freizeit', title: 'Freizeit', icon: 'film', order: 30 });
@@ -15,9 +14,6 @@ import './hub/progress.js';
 import './hub/calendar.js';
 import './hub/more.js';
 import './hub/settings.js';
-
-// Bereich: Organisation
-import './termine/termine.js';
 
 // Bereich: Gesundheit (Ordner heißt historisch „fitness“)
 import './fitness/nutrition.js';

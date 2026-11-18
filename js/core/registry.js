@@ -51,7 +51,7 @@ export async function loadDays(from, to) {
   return {
     from, to, byDay,
     itemsOf: (kind) => byKind.get(kind) || [],
-    ext: Object.fromEntries(extList),   // Zusatzdaten der Module (loadData), z. B. ext.termine
+    ext: Object.fromEntries(extList),   // Zusatzdaten der Module (loadData), data.ext[modulId]
     settings: getSettingsSync(),
     get: (date, type) => byDay.get(date)?.[type] || [],
     first: (date, type) => byDay.get(date)?.[type]?.[0] || null,

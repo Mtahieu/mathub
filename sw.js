@@ -4,7 +4,7 @@
 import { buildReminder, slotForHour } from './js/core/reminders.js';
 import { kv } from './js/core/db.js';
 
-const VERSION = '0.9.1';
+const VERSION = '0.10.0';
 const CACHE = `mathub-${VERSION}`;
 
 const PRECACHE = [
@@ -47,8 +47,6 @@ const PRECACHE = [
   './js/modules/fitness/supplements.js',
   './js/modules/freizeit/filme-data.js',
   './js/modules/freizeit/filme.js',
-  './js/modules/termine/google-api.js',
-  './js/modules/termine/termine.js',
 ];
 
 self.addEventListener('install', (event) => {

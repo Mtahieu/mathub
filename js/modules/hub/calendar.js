@@ -1,5 +1,5 @@
 // Kalender: Monatsansicht mit Zielerfüllung pro Tag und Tagesdetails.
-// Termine aus dem Google Kalender erscheinen über summarizeDay des Moduls „termine“ in den Tagesdetails.
+// Tagesdetails kommen über summarizeDay aus den Modulen (z. B. Schlaf, Job, Filme).
 
 import { registerModule, loadDays, dayScore, summarizeDay } from '../../core/registry.js';
 import { h, icon, card, pageHeader, openSheet } from '../../core/ui.js';
@@ -72,7 +72,7 @@ registerModule({
   id: 'calendar',
   area: 'hub',
   title: 'Monatsübersicht',
-  description: 'Tagesziele & Termine pro Tag',
+  description: 'Tagesziele & Tagesdetails pro Monat',
   order: 60,
   nav: { more: 2, icon: 'calendar' },
   routes: [{ path: '/kalender', render }],

@@ -1,6 +1,6 @@
 # Architektur
 
-Mathub ist bewusst **modular** gebaut: Jede Funktion ist ein Modul, das sich in einer Registry anmeldet. Der Kern (Startseite, Navigation, Serien, Kalender, Fortschritt) fragt die Module ab, statt sie zu kennen. Neue Bereiche – Kalender-Termine, Finanzen, Lernen, … – kommen als neue Module dazu, ohne bestehenden Code umzubauen.
+Mathub ist bewusst **modular** gebaut: Jede Funktion ist ein Modul, das sich in einer Registry anmeldet. Der Kern (Startseite, Navigation, Serien, Kalender, Fortschritt) fragt die Module ab, statt sie zu kennen. Neue Bereiche – Finanzen, Lernen, … – kommen als neue Module dazu, ohne bestehenden Code umzubauen.
 
 ```
 index.html, manifest.webmanifest, sw.js   PWA-Hülle + Offline-Cache
@@ -23,7 +23,6 @@ js/core/
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          bereichsübergreifend: today, progress, calendar (Monatsübersicht), more, settings
-  termine/      termine (Google Kalender: Agenda, Heute-Karte), google-api (Anmeldung & Abgleich)
   fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
                 sleep, body, supplements, supplement-data, ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
@@ -61,9 +60,8 @@ Aktuelle Typen:
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
 | item `film` | `{catalogId?, title, year?, runtime?, moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
 | kv `filme:heute` | `{date, filmId}` – Entscheidung für den Abend; kv `filme:seeded` = Startliste angelegt |
-| kv `gcal` | Google Kalender: `{clientId, account, calendars:[{id, name, color, on, primary}], lastSync, lastError, needsLogin}` |
-| kv `gcal:events` | zuletzt geladene Termine `{from, to, syncedAt, list:[{id, cal, title, start, end, allDay, loc, link, desc}]}` |
-| kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. `tmp:gcal:token` = Zugriffs-Token, ca. 1 h gültig) |
+| kv `gcal`, `gcal:events` | **nicht mehr genutzt** seit 0.10.0 (Google Kalender entfernt; Altdaten bleiben liegen) |
+| kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. Anmelde-Token) |
 | kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
 
 ### Schema & Migrationen
@@ -118,20 +116,7 @@ GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ─�
 - Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
 - GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
 
-## Google Kalender
-
-```
-Mathub ──Weiterleitung (Client-ID, scope calendar.readonly)──▶ accounts.google.com
-   ▲                                                              │
-   └──────── #access_token=… (ca. 1 h gültig) ◀───────────────────┘
-Mathub ──fetch mit Bearer-Token──▶ www.googleapis.com/calendar/v3 ──▶ kv 'gcal:events'
-```
-- Kein Server, keine Bibliothek: OAuth-„Token“-Ablauf per Weiterleitung. `launch()` des Moduls liest das Token aus dem URL-Fragment, bevor der Router startet; `state` schützt vor fremden Weiterleitungen.
-- Die **Client-ID** legt der Nutzer in seiner eigenen Google Cloud Console an (Anleitung in der App) und gibt sie in der App ein – sie steht nicht im Repo. Autorisierte Quelle `https://mtahieu.github.io`, Weiterleitungs-URI `https://mtahieu.github.io/mathub/`.
-- Ohne Server gibt es kein Refresh-Token. Ist das Token abgelaufen, meldet die Seite „Termine“ still neu an (`prompt=none`, höchstens alle 5 Min.); verlangt Google eine Eingabe, erscheint „Anmelden“.
-- Abgleich: 30 Tage zurück bis 120 Tage voraus, alle 10 Min. beim Öffnen von „Termine“ oder „Heute“ (solange das Token gilt). Termine stehen danach offline, in der Monatsübersicht und in der Morgen-Erinnerung zur Verfügung.
-
 ## Ideen für Erweiterungen
-- **Termine anlegen** direkt in Mathub (Scope `calendar.events`) – aktuell öffnet „+“ den Google Kalender.
+- **Kalender/Termine:** neues Modul mit `summarizeDay` (Monatsübersicht) und `reminderNote` (Morgen-Erinnerung). Die Hooks `loadData()` und `launch()` sind dafür schon vorhanden.
 - **Erinnerungen:** Notification API (nur bei geöffneter/installierter App zuverlässig).
 - **Weitere Bereiche:** eigener Ordner `js/modules/<bereich>/`, eigener `registerArea`.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0 – 2026-11-18
+
+- **Termine (Google Kalender) entfernt:** Tab, Heute-Karte, Termine in Monatsübersicht und Morgen-Erinnerung sind weg. Tab-Leiste: Heute, Ernährung, Filme, Mehr.
+- Früher geladene Termine bleiben ungenutzt in der lokalen Datenbank liegen; keine Datenmigration nötig.
+
 ## 0.9.1 – 2026-11-18
 
 - **Fortschritt** ist jetzt unter **Mehr → Allgemein** statt als eigener Tab; die Tab-Leiste hat wieder 5 Einträge (Heute, Termine, Ernährung, Filme, Mehr).
