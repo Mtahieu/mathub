@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 – 2026-11-18
+
+- **Neues Modul „Termine“ – dein Google Kalender in Mathub** (Tab unten, ersetzt „Training“):
+  - Agenda für die nächsten 7, 30 oder 90 Tage, nach Tagen gruppiert, mit Kalenderfarbe, Uhrzeit, Ort; ganztägige und mehrtägige Termine.
+  - Termin antippen: Details, Ort in Karten öffnen, „In Google Kalender“. „+“ legt einen neuen Termin in Google Kalender an.
+  - „Termine heute“ auf der Startseite, Termine in den Tagesdetails der Monatsübersicht und in der Morgen-Erinnerung.
+  - Kalender einzeln ein-/ausblenden; Termine werden lokal gespeichert und sind offline verfügbar.
+  - Nur Lesezugriff, kein Server: Einrichtung einmalig in der App mit einer eigenen Client-ID aus der Google Cloud Console (Schritt-für-Schritt-Anleitung unter Termine). Läuft der ca. 1-stündige Zugang ab, meldet Mathub beim Öffnen der Termine automatisch kurz neu an.
+- **Training entfernt:** Training, Übungen, Physio-Katalog, Trainings-Wochenplan und Trainings-Diagramme sind weg. Früher eingetragene Übungen bleiben in der Datenbank und im Backup erhalten, werden aber nicht mehr angezeigt. Trainings-Ziele zählen nicht mehr für Serien und Fortschritt (auch rückwirkend).
+- Bereich „Fitness“ heißt jetzt **„Gesundheit“**; der bisherige „Kalender“ heißt **„Monatsübersicht“**.
+- Anmelde-Token landen nie im Backup (neu: kv-Schlüssel mit `tmp:` werden nicht exportiert).
+- Keine Datenmigration nötig.
+
 ## 0.7.0 – 2026-11-17
 
 - **Neues Modul „Supplements“** (Mehr → Supplements):

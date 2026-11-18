@@ -1,6 +1,6 @@
-// Bewertungen von Übungen (1–5 Sterne). Die App merkt sich die aktuelle Meinung und den Verlauf.
+// Bewertungen (1–5 Sterne), aktuell für Rezepte. Die App merkt sich die aktuelle Meinung und den Verlauf.
 // items kind 'rating': {id:'rating:<key>', key, stars, history:[{date, stars}]}
-// key = catalogId (Katalogübung) oder exercise.id (eigene Übung) – so teilen sich Katalog und Plan eine Bewertung.
+// key = Rezept-Schlüssel (früher auch Übungen; alte Bewertungen bleiben gespeichert).
 
 import { items } from '../../core/db.js';
 import { today } from '../../core/dates.js';

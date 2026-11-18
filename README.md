@@ -1,8 +1,8 @@
 # Mathub
 
-Persönlicher Hub als installierbare Web-App (PWA). Erster Bereich: **Fitness** – Physio- und Krafttraining, Körperwerte, Ernährung, Schlaf, Serien und Verlaufsdiagramme.
+Persönlicher Hub als installierbare Web-App (PWA): Termine aus dem Google Kalender, Ernährung, Schlaf, Supplements, Körperwerte, Job-Check-in, Serien und Verlaufsdiagramme.
 
-**Datenschutz:** Mathub hat keinen Server und kein Konto. Alle Einträge liegen ausschließlich im Speicher deines Browsers auf deinem Handy (IndexedDB). Dieses Repository enthält nur den Programmcode, niemals deine Daten.
+**Datenschutz:** Mathub hat keinen Server und kein Konto. Alle Einträge liegen ausschließlich im Speicher deines Browsers auf deinem Handy (IndexedDB). Termine holt die App direkt bei Google (nur Lesezugriff) und speichert sie ebenfalls nur lokal. Dieses Repository enthält nur den Programmcode, niemals deine Daten.
 
 ## Auf dem Handy installieren (Android)
 
@@ -24,20 +24,19 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.7)
+## Funktionen (Version 0.8)
 
 | Bereich | Was du machen kannst |
 |---|---|
-| **Heute** | Tagesziele auf einen Blick, Training, Essensplan des Tages, Schlaf und (optional) Gewicht; frühere Tage nachtragen |
-| **Training** | Übungen (Physio, Kraft, Mobilität, Cardio) mit Sätzen/Wiederholungen/Gewicht oder Zeit, Beschwerden 0–10, Wochenplan, Vorlagen |
-| **Physio-Katalog** | Übungen für die Hüfte nach FAI-OP mit Anleitung, Filtern und Sterne-Bewertung |
-| **Erinnerungen** | Push um 7:30 und 20:30 Uhr mit deinen offenen Tageszielen |
+| **Heute** | Tagesziele auf einen Blick, Termine des Tages, Essensplan, Schlaf und (optional) Gewicht; frühere Tage nachtragen |
+| **Termine** | Google Kalender (nur Lesen): Agenda für 7/30/90 Tage, Kalender auswählen, Details mit Ort & Link, offline verfügbar. Einrichtung einmalig in der App (eigene Client-ID) |
+| **Erinnerungen** | Push um 7:30 und 20:30 Uhr mit deinen offenen Tageszielen, morgens inkl. Terminen |
 | **Ernährung** | Rezepte mit Bildern & vielen Filtern (vegan, Heißluftfritteuse …), Wochenplan für Intervallfasten mit Kantine an Bürotagen und Auswärts-Essen, variable Einkaufsliste – ohne Eingeben, Kalorien geschätzt |
 | **Schlaf** | Stunden & Qualität der letzten Nacht |
 | **Supplements** | Arsenal & Einnahmeplan, tägliches Abhaken, Kombi-Check mit Wirkung & Wechselwirkungen, recherchiertes Wissen |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
-| **Kalender** | Monatsansicht mit Zielerfüllung und Tagesdetails |
+| **Monatsübersicht** | Monatsansicht mit Zielerfüllung, Tagesdetails und Terminen |
 | **Einstellungen** | Profil, Ziele inkl. Richtwert-Rechner, Serien-Schwelle, Hell/Dunkel, Backup |
 
 ## Entwicklung

@@ -2,7 +2,7 @@
 
 import { openDB, runMigrations, kv } from './core/db.js';
 import { loadSettings, applyTheme } from './core/settings.js';
-import { getRoutes, getTabs } from './core/registry.js';
+import { getRoutes, getTabs, runLaunchHooks } from './core/registry.js';
 import { startRouter, navigate } from './core/router.js';
 import { h, icon, closeAllSheets } from './core/ui.js';
 import { today, isKey } from './core/dates.js';
@@ -58,6 +58,7 @@ async function boot() {
     applyTheme();
     matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', applyTheme);
     navigator.storage?.persist?.().catch(() => {});
+    await runLaunchHooks();
     startRouter(render);
     initUpdates();
   } catch (err) {

@@ -1,5 +1,5 @@
 // Kalender: Monatsansicht mit Zielerfüllung pro Tag und Tagesdetails.
-// Erweiterungsidee: Termine als entries type 'event' (oder items kind 'event' für Serien) + summarizeDay im eigenen Modul.
+// Termine aus dem Google Kalender erscheinen über summarizeDay des Moduls „termine“ in den Tagesdetails.
 
 import { registerModule, loadDays, dayScore, summarizeDay } from '../../core/registry.js';
 import { h, icon, card, pageHeader, openSheet } from '../../core/ui.js';
@@ -43,7 +43,7 @@ async function render(el, ctx) {
   const data = await loadDays(from, to);
   const thr = threshold();
 
-  el.append(pageHeader('Kalender'));
+  el.append(pageHeader('Monatsübersicht'));
   const go = (m) => ctx.navigate('/kalender', { m: m === monthKey(t) ? undefined : m }, { replace: true });
 
   const cells = [];
@@ -71,8 +71,8 @@ async function render(el, ctx) {
 registerModule({
   id: 'calendar',
   area: 'hub',
-  title: 'Kalender',
-  description: 'Monatsübersicht deiner Tage',
+  title: 'Monatsübersicht',
+  description: 'Tagesziele & Termine pro Tag',
   order: 60,
   nav: { more: 2, icon: 'calendar' },
   routes: [{ path: '/kalender', render }],

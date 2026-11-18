@@ -190,30 +190,13 @@ button.check { width: 34px; height: 34px; }
   font-size: .72rem; font-weight: 700; padding: 3px 9px; border-radius: 99px;
   background: var(--surface-2); color: var(--muted); white-space: nowrap; flex: none;
 }
-[data-cat="physio"] { --cat: var(--c-physio); }
-[data-cat="kraft"] { --cat: var(--c-kraft); }
-[data-cat="mobil"] { --cat: var(--c-mobil); }
-[data-cat="cardio"] { --cat: var(--c-cardio); }
-[data-cat="sonst"] { --cat: var(--c-sonst); }
-.tag[data-cat], .chip[data-cat] { color: var(--cat); background: color-mix(in srgb, var(--cat) 14%, transparent); border-color: transparent; }
-
-/* ---------- Übungen ---------- */
+/* ---------- Listenzeilen (Supplements u. a.) ---------- */
 .ex-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
 .ex-row:first-child { border-top: 0; padding-top: 2px; }
 .ex-body { flex: 1; min-width: 0; background: none; border: 0; text-align: left; padding: 4px 0; cursor: pointer; }
 .ex-name { font-weight: 620; }
 .ex-sub { font-size: .85rem; color: var(--muted); }
 .ex-row.done .ex-name { color: var(--muted); }
-.sets { display: flex; flex-direction: column; gap: 8px; }
-.set-row { display: flex; align-items: center; gap: 8px; }
-.set-no { width: 22px; color: var(--muted); font-weight: 700; flex: none; }
-.set-field { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; }
-.set-field span { color: var(--muted); font-size: .82rem; }
-.set-field .input { min-width: 0; text-align: center; }
-.week-row { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
-.week-row:first-child { border-top: 0; }
-.week-day { width: 28px; font-weight: 750; color: var(--muted); padding-top: 7px; flex: none; }
-.week-row.today .week-day { color: var(--accent); }
 
 /* ---------- Fortschritt ---------- */
 .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
@@ -329,9 +312,6 @@ textarea.input { min-height: 72px; resize: vertical; }
   font-size: .9rem; font-weight: 620; padding: 7px 13px; border-radius: 99px; min-height: 38px; cursor: pointer;
 }
 .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.range { width: 100%; accent-color: var(--accent); }
-.range-row { display: flex; gap: 12px; align-items: center; }
-.pain-val { min-width: 24px; text-align: right; font-weight: 750; }
 .stars { display: flex; gap: 2px; }
 .star { background: none; border: 0; color: var(--surface-3); padding: 4px; cursor: pointer; }
 .star.on { color: var(--warn); }
@@ -393,9 +373,6 @@ details.measures[open] summary { margin-bottom: 10px; }
 .stars.readonly { gap: 0; flex: none; }
 .stars.readonly .star { padding: 0; }
 .stars.readonly .star .icon { stroke-width: 2.4; }
-.level { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 2px; }
-.level i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); display: block; }
-.level i.on { background: var(--accent); }
 .chips.scroll { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none; }
 .chips.scroll::-webkit-scrollbar { display: none; }
 .chips.scroll .chip { flex: none; }
@@ -570,3 +547,14 @@ details.measures[open] summary { margin-bottom: 10px; }
 .setup-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
 .setup-name { display: flex; align-items: center; gap: 8px; font-weight: 650; }
 .setup-row .seg button { font-size: .8rem; min-height: 34px; }
+
+/* ---------- Termine (Google Kalender) ---------- */
+.ev-row { gap: 10px; }
+.ev-bar { width: 4px; align-self: stretch; border-radius: 4px; flex: none; }
+.ev-time { width: 64px; flex: none; font-size: .82rem; font-weight: 650; color: var(--muted); white-space: pre-line; line-height: 1.3; }
+.ev-time.ev-label { font-size: .74rem; }
+.card.ev-today .card-head h2 { color: var(--accent); }
+.cal-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; display: inline-block; }
+.copy-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.copy-row code { flex: 1; min-width: 0; word-break: break-all; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; background: var(--surface-2); padding: 6px 8px; border-radius: 8px; }
+.pre { white-space: pre-line; }
