@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1 – 2026-11-18
+
+- **Supplements: Vitamin B6** im Katalog (Gesundheit → Supplements): Wirkung, Lebensmittelquellen, Studienlage, Bedarf (DGE 1,4/1,6 mg), aktuelle BfR-Höchstmenge 0,9 mg/Tag aus Nahrungsergänzung (2024, früher 3,5 mg), EFSA-Obergrenze 12 mg/Tag und Warnung vor Nervenschäden bei Überdosierung.
+- Kombi-Check kennt B6 mit Magnesium (Vorsicht: viele Mg+B6-Präparate über der BfR-Höchstmenge), B12, Zink und Biotin; neuer Wirkungsbereich „Nerven“.
+- Quellen ergänzt in docs/SUPPLEMENTS.md.
+
 ## 0.8.0 – 2026-11-18
 
 - **Neues Modul „Termine“ – dein Google Kalender in Mathub** (Tab unten, ersetzt „Training“):
