@@ -13,7 +13,7 @@ import { emit } from './events.js';
 
 const DB_NAME = 'mathub';
 export const DB_VERSION = 1;
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 3;
 
 let dbPromise = null;
 
@@ -147,6 +147,24 @@ const MIGRATIONS = [
       const prefs = { ...(s.prefs || {}), weighDaily: false };
       delete prefs.waterSteps;
       await kv.set('settings', { ...s, targets, prefs });
+    },
+  },
+  {
+    // 0.10.1: Filme-Startliste – „Sinners“ raus, „Watchmen“ rein (nur wenn die Startliste schon angelegt war).
+    to: 3,
+    async run() {
+      if (!(await kv.get('filme:seeded', false))) return;
+      const films = await items.all('film');
+      const removed = films.filter((f) => f.catalogId === 'sinners');
+      for (const f of removed) await items.delete(f.id);
+      const tonight = await kv.get('filme:heute', null);
+      if (tonight && removed.some((f) => f.id === tonight.filmId)) await kv.set('filme:heute', null);
+      if (!films.some((f) => f.catalogId === 'watchmen' || /^\s*watchmen\s*$/i.test(f.title || ''))) {
+        await items.put({
+          kind: 'film', catalogId: 'watchmen', title: 'Watchmen', year: 2009, runtime: 162,
+          moods: ['spannung', 'nachdenken'], intensity: 3, emoji: '🕰️', watched: false,
+        });
+      }
     },
   },
 ];

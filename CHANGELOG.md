@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1 – 2026-11-23
+
+- **Filme:** „Sinners“ von der Liste genommen, **„Watchmen“** (2009, Zack Snyder) aufgenommen – mit Infos, Stimmung (Spannung, Nachdenken) und Intensität „heftig“.
+- Datenmigration 3 übernimmt das auf Geräten, auf denen die Startliste schon angelegt ist (gesehene Filme, Bewertungen und eigene Filme bleiben unverändert).
+
 ## 0.10.0 – 2026-11-18
 
 - **Termine (Google Kalender) entfernt:** Tab, Heute-Karte, Termine in Monatsübersicht und Morgen-Erinnerung sind weg. Tab-Leiste: Heute, Ernährung, Filme, Mehr.

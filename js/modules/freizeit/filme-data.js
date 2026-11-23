@@ -35,10 +35,10 @@ export const FILM_CATALOG = [
     desc: 'Kai und Stefan betreiben in Würzburg einen Pizza-Lieferdienst mit ganz besonderem Nebengeschäft – bis ein verdeckter Ermittler auftaucht. Deutscher Kult-Kifferfilm mit legendären Dialogen. Leichte Kost für einen entspannten Abend.',
   },
   {
-    id: 'sinners', title: 'Sinners', year: 2025, runtime: 137, emoji: '🎸', hue: 0,
-    director: 'Ryan Coogler', cast: 'Michael B. Jordan, Hailee Steinfeld, Miles Caton', genre: 'Horror, Thriller, Musik',
-    moods: ['gruseln', 'spannung'], intensity: 3,
-    desc: 'Mississippi, 1932: Die Zwillinge Smoke und Stack eröffnen in ihrer Heimatstadt einen Juke Joint mit Blues-Musik. In der Eröffnungsnacht taucht ein uraltes Böses auf. Atmosphärischer Vampir-Horror mit großartiger Musik.',
+    id: 'watchmen', title: 'Watchmen', year: 2009, runtime: 162, emoji: '🕰️', hue: 50,
+    director: 'Zack Snyder', cast: 'Patrick Wilson, Jackie Earle Haley, Billy Crudup, Malin Åkerman, Jeffrey Dean Morgan', genre: 'Superhelden-Drama, Neo-Noir',
+    moods: ['spannung', 'nachdenken'], intensity: 3,
+    desc: 'Ein alternatives 1985: Superhelden sind verboten, der Kalte Krieg steht kurz vor dem Atomkrieg. Als der Comedian ermordet wird, ermittelt der maskierte Rorschach und stößt auf eine Verschwörung gegen die ehemaligen Helden. Düstere, brutale Verfilmung der berühmten Graphic Novel; lang, aber bildgewaltig.',
   },
   {
     id: 'the-substance', title: 'The Substance', year: 2024, runtime: 141, emoji: '💉', hue: 140,
