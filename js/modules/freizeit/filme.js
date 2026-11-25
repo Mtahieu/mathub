@@ -1,8 +1,9 @@
 // Filme: Merkliste mit „gesehen“-Haken und „Hilf mir zu entscheiden!“ für den Filmabend.
-// items kind 'film': {catalogId?, title, year?, runtime?, moods:[], intensity?, emoji?, note?, watched, watchedAt?, stars?}
+// items kind 'film': {catalogId?, title, year?, runtime?, genres:[], moods:[], intensity?, emoji?, note?, watched, watchedAt?, stars?}
 //   catalogId verweist auf FILM_CATALOG (filme-data.js) für Beschreibung, Regie usw.
 // kv 'filme:seeded'  Startliste angelegt (danach nie wieder, auch wenn Filme gelöscht werden)
 // kv 'filme:heute'   {date, filmId} – Entscheidung für den heutigen Abend
+// Titelbilder: filme-poster.js (Wikipedia, nur auf dem Gerät)
 
 import { registerModule } from '../../core/registry.js';
 import { items, kv } from '../../core/db.js';
@@ -11,7 +12,8 @@ import {
   starRating, emptyState,
 } from '../../core/ui.js';
 import { today, formatDate } from '../../core/dates.js';
-import { FILM_CATALOG, MOODS, INTENSITY, catalogFilm } from './filme-data.js';
+import { FILM_CATALOG, MOODS, INTENSITY, GENRES, catalogFilm } from './filme-data.js';
+import { findPoster, forgetPoster } from './filme-poster.js';
 
 const selected = new Set();   // Auswahl für die Entscheidung (bleibt beim Neuzeichnen erhalten)
 
@@ -19,7 +21,7 @@ const selected = new Set();   // Auswahl für die Entscheidung (bleibt beim Neuz
 async function seedOnce() {
   if (await kv.get('filme:seeded', false)) return;
   for (const f of FILM_CATALOG) {
-    await items.put({ kind: 'film', catalogId: f.id, title: f.title, year: f.year, runtime: f.runtime, moods: f.moods, intensity: f.intensity, emoji: f.emoji, watched: false });
+    await items.put({ kind: 'film', catalogId: f.id, title: f.title, year: f.year, runtime: f.runtime, genres: f.genres, moods: f.moods, intensity: f.intensity, emoji: f.emoji, watched: false });
   }
   await kv.set('filme:seeded', true);
 }
@@ -27,7 +29,12 @@ async function seedOnce() {
 /** Item + Katalog-Infos zusammengeführt (eigene Angaben haben Vorrang). */
 function view(it) {
   const c = catalogFilm(it.catalogId) || {};
-  return { ...c, ...it, moods: it.moods?.length ? it.moods : (c.moods || []), hue: c.hue ?? hueOf(it.title) };
+  return {
+    ...c, ...it,
+    moods: it.moods?.length ? it.moods : (c.moods || []),
+    genres: it.genres?.length ? it.genres : (c.genres || []),
+    hue: c.hue ?? hueOf(it.title),
+  };
 }
 function hueOf(s = '') {
   let x = 0;
@@ -60,10 +67,21 @@ function markWatched(f, after) {
 
 const minutes = (f) => (f.runtime ? `ca. ${f.runtime} Min.` : null);
 const moodEmojis = (f) => f.moods.map((m) => MOODS[m]?.emoji).filter(Boolean).join(' ');
+const genreText = (f, max = 2) => f.genres.slice(0, max).map((g) => GENRES[g] || g).join(', ');
 
 // ---------- Bausteine ----------
+/** Kachel mit Emoji; das echte Titelbild wird nachgeladen, sobald es da ist. */
 function poster(f, size = 'sm') {
-  return h('span', { class: `poster poster-${size}`, style: `--hue: ${Number(f.hue) || 0}` }, f.emoji || '🎬');
+  const tile = h('span', { class: `poster poster-${size}`, style: `--hue: ${Number(f.hue) || 0}` }, f.emoji || '🎬');
+  findPoster(f).then((r) => {
+    if (!r?.url) return;
+    const img = new Image();
+    img.alt = '';
+    img.decoding = 'async';
+    img.onload = () => { tile.classList.add('has-img'); tile.replaceChildren(img); };
+    img.src = r.url;
+  });
+  return tile;
 }
 
 function filmRow(f, ctx, bar) {
@@ -85,7 +103,8 @@ function filmRow(f, ctx, bar) {
       poster(f),
       h('span', { class: 'list-main' },
         h('span', { class: 'list-title' }, f.title),
-        h('span', { class: 'list-sub' }, [f.year, minutes(f), moodEmojis(f)].filter(Boolean).join(' · ')))),
+        h('span', { class: 'list-sub' }, [f.year, minutes(f)].filter(Boolean).join(' · ')),
+        h('span', { class: 'list-sub' }, [genreText(f), moodEmojis(f)].filter(Boolean).join(' · ')))),
     h('button', { class: 'film-seen', type: 'button', 'aria-label': `${f.title} als gesehen markieren`, onclick: () => markWatched(f, () => ctx.refresh()) },
       icon('eye', 18), h('span', null, 'Gesehen')));
   return row;
@@ -121,17 +140,25 @@ function decideBar(films, ctx) {
 // ---------- Film-Details ----------
 function openFilm(f, ctx) {
   const after = () => ctx.refresh();
+  const source = h('p', { class: 'small muted' });
+  findPoster(f).then((r) => {
+    if (r?.page) source.replaceChildren('Titelbild & mehr: ', h('a', { class: 'link', href: r.page, target: '_blank', rel: 'noopener' }, `Wikipedia – ${r.pageTitle || f.title}`));
+  });
   const body = [
-    h('div', { class: 'film-head' }, poster(f, 'lg'),
-      h('div', null,
-        h('div', { class: 'small muted' }, [f.year, f.genre, minutes(f)].filter(Boolean).join(' · ')),
+    h('div', { class: 'film-head' }, poster(f, 'xl'),
+      h('div', { class: 'film-facts' },
+        f.deTitle ? h('div', { class: 'small' }, h('em', null, f.deTitle)) : null,
+        h('div', { class: 'small muted' }, [f.year, f.country, minutes(f)].filter(Boolean).join(' · ')),
         f.director ? h('div', { class: 'small' }, 'Regie: ', f.director) : null,
         f.cast ? h('div', { class: 'small muted' }, f.cast) : null)),
+    f.genres.length ? h('div', { class: 'chips' }, f.genres.map((g) => h('span', { class: 'tag genre' }, GENRES[g] || g))) : null,
     f.desc ? h('p', null, f.desc) : null,
+    f.why ? h('div', { class: 'summary' }, h('strong', { class: 'small' }, 'Warum anschauen?'), h('span', { class: 'small' }, f.why)) : null,
     f.note ? h('p', { class: 'small muted pre' }, f.note) : null,
     f.moods.length || f.intensity ? h('div', { class: 'chips' },
       f.moods.map((m) => h('span', { class: 'tag' }, `${MOODS[m]?.emoji || ''} ${MOODS[m]?.label || m}`)),
       f.intensity ? h('span', { class: 'tag' }, `Intensität: ${INTENSITY[f.intensity]}`) : null) : null,
+    source,
   ];
   if (f.watched) {
     body.push(field(`Gesehen${f.watchedAt ? ' am ' + formatDate(f.watchedAt) : ''} – deine Bewertung`, starRating(f.stars, async (v) => {
@@ -165,12 +192,21 @@ function openEditor(f, ctx) {
     }, `${m.emoji} ${m.label}`);
     return c;
   }));
+  const genres = new Set(f?.genres || []);
+  const genreChips = h('div', { class: 'chips' }, Object.entries(GENRES).map(([k, label]) => {
+    const c = h('button', {
+      type: 'button', class: 'chip' + (genres.has(k) ? ' active' : ''),
+      onclick: () => { if (genres.has(k)) genres.delete(k); else genres.add(k); c.classList.toggle('active', genres.has(k)); },
+    }, label);
+    return c;
+  }));
   let intensity = String(f?.intensity || 2);
   const sheet = openSheet({
     title: f ? 'Film bearbeiten' : 'Film hinzufügen',
     body: [
       field('Titel', title),
       field('Laufzeit (Minuten)', runtime, 'Optional – hilft bei „max. 2 Stunden“.'),
+      field('Kategorien', genreChips),
       field('Stimmung', moodChips),
       field('Intensität', segmented(Object.entries(INTENSITY).map(([v, l]) => ({ value: v, label: l })), intensity, (v) => { intensity = v; })),
       field('Notiz', note),
@@ -192,9 +228,10 @@ function openEditor(f, ctx) {
           const t = title.value.trim();
           if (!t) { toast('Bitte einen Titel eingeben'); return; }
           const existing = f ? await items.get(f.id) : null;
+          if (existing && !existing.catalogId && existing.title !== t) await forgetPoster(existing);   // neuer Titel → Bild neu suchen
           await items.put({
             ...(existing || { kind: 'film', watched: false }),
-            title: t, runtime: readNum(runtime), moods: [...moods], intensity: Number(intensity), note: note.value.trim(),
+            title: t, runtime: readNum(runtime), genres: [...genres], moods: [...moods], intensity: Number(intensity), note: note.value.trim(),
           });
           sheet.close();
           toast(f ? 'Gespeichert' : `„${t}“ hinzugefügt`);
@@ -339,16 +376,27 @@ async function render(el, ctx) {
   const tonight = await tonightPick(films);
   if (tonight) el.append(tonightCard(tonight, ctx));
 
+  const genresHere = Object.keys(GENRES).filter((g) => open.some((f) => f.genres.includes(g)));
+  const g = genresHere.includes(ctx.query.g) ? ctx.query.g : null;
+  const shown = g ? open.filter((f) => f.genres.includes(g)) : open;
+  if (genresHere.length > 1) {
+    el.append(h('div', { class: 'chips scroll' },
+      [[null, 'Alle'], ...genresHere.map((x) => [x, GENRES[x]])].map(([k, label]) => h('button', {
+        type: 'button', class: 'chip' + (g === k ? ' active' : ''),
+        onclick: () => ctx.navigate('/filme', { g: k || undefined }, { replace: true }),
+      }, label))));
+  }
+
   const bar = decideBar(open, ctx);
-  const allSel = open.length && open.every((f) => selected.has(f.id));
-  el.append(card(`Noch nicht gesehen (${open.length})`, {
+  const allSel = shown.length && shown.every((f) => selected.has(f.id));
+  el.append(card(g ? `${GENRES[g]} (${shown.length})` : `Noch nicht gesehen (${open.length})`, {
     iconName: 'film',
-    actions: open.length > 1 ? h('button', {
+    actions: shown.length > 1 ? h('button', {
       class: 'link',
-      onclick: () => { if (allSel) selected.clear(); else open.forEach((f) => selected.add(f.id)); ctx.refresh(); },
+      onclick: () => { if (allSel) shown.forEach((f) => selected.delete(f.id)); else shown.forEach((f) => selected.add(f.id)); ctx.refresh(); },
     }, allSel ? 'Keine' : 'Alle wählen') : null,
-  }, open.length
-    ? h('div', { class: 'list' }, open.map((f) => filmRow(f, ctx, bar)))
+  }, shown.length
+    ? h('div', { class: 'list' }, shown.map((f) => filmRow(f, ctx, bar)))
     : emptyState('Alles gesehen! Füge neue Filme hinzu.', h('button', { class: 'btn', onclick: () => openEditor(null, ctx) }, 'Film hinzufügen'))));
   if (open.length >= 2) el.append(bar.el);
 

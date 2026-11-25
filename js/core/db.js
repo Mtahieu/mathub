@@ -13,7 +13,7 @@ import { emit } from './events.js';
 
 const DB_NAME = 'mathub';
 export const DB_VERSION = 1;
-export const DATA_VERSION = 3;
+export const DATA_VERSION = 4;
 
 let dbPromise = null;
 
@@ -165,6 +165,19 @@ const MIGRATIONS = [
           moods: ['spannung', 'nachdenken'], intensity: 3, emoji: '🕰️', watched: false,
         });
       }
+    },
+  },
+  {
+    // 0.11.0: „Puss in Boots: The Last Wish“ in die Filmliste (nur wenn die Startliste schon angelegt war).
+    to: 4,
+    async run() {
+      if (!(await kv.get('filme:seeded', false))) return;
+      const films = await items.all('film');
+      if (films.some((f) => f.catalogId === 'puss-in-boots-last-wish' || /puss in boots|gestiefelte kater/i.test(f.title || ''))) return;
+      await items.put({
+        kind: 'film', catalogId: 'puss-in-boots-last-wish', title: 'Puss in Boots: The Last Wish', year: 2022, runtime: 102,
+        genres: ['animation', 'abenteuer', 'komoedie', 'fantasy', 'familie'], moods: ['lachen', 'spannung'], intensity: 1, emoji: '🐈', watched: false,
+      });
     },
   },
 ];

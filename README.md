@@ -24,7 +24,7 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
 
-## Funktionen (Version 0.10)
+## Funktionen (Version 0.11)
 
 | Bereich | Was du machen kannst |
 |---|---|
@@ -35,7 +35,7 @@ Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die D
 | **Supplements** | Arsenal & Einnahmeplan, tägliches Abhaken, Kombi-Check mit Wirkung & Wechselwirkungen, recherchiertes Wissen |
 | **Körperwerte** | Gewicht, Körperfett, frei wählbare Umfänge, Trend (Ø 7 Tage, kg/Woche) |
 | **Fortschritt** (unter Mehr) | Serien, 16-Wochen-Übersicht, Zielquoten, Meilensteine, Diagramme |
-| **Filme** | Merkliste mit „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
+| **Filme** | Merkliste mit Titelbildern (von Wikipedia, offline gespeichert), Kategorien & Filter, ausführlichen Infos, „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
 | **Monatsübersicht** | Monatsansicht mit Zielerfüllung und Tagesdetails |
 | **Einstellungen** | Profil, Ziele inkl. Richtwert-Rechner, Serien-Schwelle, Hell/Dunkel, Backup |
 

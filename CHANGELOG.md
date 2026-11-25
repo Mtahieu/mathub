@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 – 2026-11-25
+
+- **Filme: „Puss in Boots: The Last Wish“** (Der gestiefelte Kater: Der letzte Wunsch, 2022) aufgenommen. Datenmigration 4 ergänzt ihn auf Geräten mit bestehender Liste.
+- **Echte Titelbilder:** Die App lädt die Filmposter auf dem Handy von Wikipedia und speichert sie für offline. Auch für eigene Filme wird automatisch ein Bild gesucht. Ohne Netz erscheint wie bisher die Emoji-Kachel. Die Bilder liegen nicht im Repo (Urheberrecht).
+- **Ausführliche Infos:** neue Beschreibungen (spoilerfrei), „Warum anschauen?“, Land, Besetzung, deutscher Titel und Link zum Wikipedia-Artikel.
+- **Kategorien:** Komödie, Drama, Horror, Science-Fiction, Fantasy, Animation, Abenteuer, Action, Superhelden, Satire, Romantik, Krimi, Familie, Thriller – in der Liste, in den Details, als Filter oben auf der Filme-Seite und beim Anlegen eigener Filme.
+
 ## 0.10.1 – 2026-11-23
 
 - **Filme:** „Sinners“ von der Liste genommen, **„Watchmen“** (2009, Zack Snyder) aufgenommen – mit Infos, Stimmung (Spannung, Nachdenken) und Intensität „heftig“.

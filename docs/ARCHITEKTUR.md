@@ -26,7 +26,7 @@ js/modules/
   fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
                 sleep, body, supplements, supplement-data, ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
-  freizeit/     filme (Merkliste & Entscheidungshilfe), filme-data (Startliste & Infos)
+  freizeit/     filme (Merkliste & Entscheidungshilfe), filme-data (Startliste & Infos), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
@@ -58,7 +58,8 @@ Aktuelle Typen:
 | `supplements` (1/Tag) | `{taken:{itemId: Zeitstempel}}` |
 | item `supplement` | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
-| item `film` | `{catalogId?, title, year?, runtime?, moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
+| item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
+| kv `filme:poster` | gemerkte Wikipedia-Treffer `{<schlüssel>: {url, page, pageTitle, at}}` – Bilddateien im SW-Cache `posters-v1` |
 | kv `filme:heute` | `{date, filmId}` – Entscheidung für den Abend; kv `filme:seeded` = Startliste angelegt |
 | kv `gcal`, `gcal:events` | **nicht mehr genutzt** seit 0.10.0 (Google Kalender entfernt; Altdaten bleiben liegen) |
 | kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. Anmelde-Token) |
@@ -115,6 +116,10 @@ GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ─�
 - Secret `PUSH_CONFIG` = Code aus der App (Einstellungen → Erinnerungen). Mehrere Geräte: JSON-Array.
 - Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
 - GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
+
+## Filmposter
+
+Poster sind urheberrechtlich geschützt und liegen deshalb **nicht im Repo**. Das Handy fragt die Wikipedia-API (`en.wikipedia.org`, `origin=*`, `pilicense=any`) nach dem Bild des hinterlegten Artikels (`wiki` im Katalog) bzw. sucht bei eigenen Filmen nach „<Titel> film“. Der Service Worker speichert die Bilder von `upload.wikimedia.org` im Cache `posters-v1` (max. 200, bleibt über Updates erhalten). Ohne Netz oder Treffer zeigt die App die Emoji-Kachel – das ist die einzige bewusste Ausnahme von „alles offline“ und rein optional.
 
 ## Ideen für Erweiterungen
 - **Kalender/Termine:** neues Modul mit `summarizeDay` (Monatsübersicht) und `reminderNote` (Morgen-Erinnerung). Die Hooks `loadData()` und `launch()` sind dafür schon vorhanden.

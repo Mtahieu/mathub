@@ -4,8 +4,11 @@
 import { buildReminder, slotForHour } from './js/core/reminders.js';
 import { kv } from './js/core/db.js';
 
-const VERSION = '0.10.1';
+const VERSION = '0.11.0';
 const CACHE = `mathub-${VERSION}`;
+const POSTER_CACHE = 'posters-v1';   // Filmposter von Wikipedia – bleibt über Updates erhalten
+const POSTER_HOST = 'upload.wikimedia.org';
+const POSTER_MAX = 200;
 
 const PRECACHE = [
   './',
@@ -46,6 +49,7 @@ const PRECACHE = [
   './js/modules/fitness/supplement-data.js',
   './js/modules/fitness/supplements.js',
   './js/modules/freizeit/filme-data.js',
+  './js/modules/freizeit/filme-poster.js',
   './js/modules/freizeit/filme.js',
 ];
 
@@ -71,6 +75,10 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.hostname === POSTER_HOST && req.destination === 'image') {
+    event.respondWith(posterFromCache(req));
+    return;
+  }
   if (url.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
@@ -90,6 +98,24 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+// Filmposter: zuerst aus dem Cache, sonst laden und merken (auch undurchsichtige Antworten für <img>).
+async function posterFromCache(req) {
+  const cache = await caches.open(POSTER_CACHE);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  try {
+    const res = await fetch(req);
+    if (res.ok || res.type === 'opaque') {
+      await cache.put(req, res.clone());
+      const keys = await cache.keys();
+      for (const k of keys.slice(0, Math.max(0, keys.length - POSTER_MAX))) await cache.delete(k);
+    }
+    return res;
+  } catch {
+    return Response.error();
+  }
+}
 
 // ---------- Push-Erinnerungen ----------
 // Das Signal von GitHub ist leer; der Text entsteht hier aus den lokalen Daten.
