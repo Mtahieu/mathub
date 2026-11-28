@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.0 – 2026-11-28
+
+- **Kochen appetitlich statt Liste:** oben ein großes „Lust auf …?“-Rezept des Tages (passend zur Tageszeit, bevorzugt etwas Neues), darunter wischbare Themen-Karussells – Schnell & einfach, Wohlfühlessen, Proteinbomben, Aus der Heißluftfritteuse, Frühstück, Kleine Snacks – und „Alle Rezepte“ als großes Bildraster mit Titel auf dem Bild.
+- **Jedes Rezept hat einen appetitlichen Kurztext** (in Karten, Details und in der Suche).
+- **Schönere Bilder:** warmes Licht, Glanz, sanfte Vignette und aufsteigender Dampf über warmen Gerichten.
+- Gegessen per ✓ direkt auf der Karte (mit Rückgängig); gegessene Rezepte zeigen Anzahl und Sterne und stehen eingeklappt unter „Schon gegessen“. Personenzahl über 👥 oben.
+
 ## 0.17.0 – 2026-11-28
 
 - **Kochen neu – wie die Filme:** Die Startseite zeigt alle veganen Rezepte als Liste mit Bild, Zeit, Kalorien und Protein. „Gegessen“ per Tipp (mit Rückgängig); schon gegessene Rezepte stehen eingeklappt unter „Schon gegessen“ – mit Anzahl, Datum und Sternen.

@@ -17,6 +17,7 @@ import { RECIPES, INGREDIENTS, CATEGORIES, MEALS, CUISINES, TAGS, EQUIPMENT, rec
 import { loadRatings, rate } from './ratings.js';
 import { recipeSvg, hasIngredientLook } from './rezept-bild.js';
 import { markEaten, unmarkEaten, eatenIndex } from './rezept-log.js';
+import { teaser } from './rezept-texte.js';
 
 const rKey = (r) => 'rezept:' + (r.id || r);
 const persons = () => getSettingsSync().prefs.food?.servings || 1;
@@ -115,7 +116,10 @@ async function openRecipe(r, ctx) {
   };
   renderIng();
   const body = [
-    recipeImage(r, { size: 'lg' }),
+    h('div', { class: 'food-hero detail' }, recipeImage(r, { size: 'lg' }),
+      h('div', { class: 'food-hero-text' },
+        h('div', { class: 'food-hero-meta' }, `⏱ ${r.time} Min. · ${fmtInt(r.nut.kcal)} kcal · ${r.nut.p} g Protein`))),
+    teaser(r) ? h('p', { class: 'food-teaser' }, teaser(r)) : null,
     h('div', { class: 'chips' },
       h('span', { class: 'tag' }, `⏱ ${r.time} Min.`),
       h('span', { class: 'tag' }, CUISINES[r.cuisine]),
@@ -152,29 +156,52 @@ async function openRecipe(r, ctx) {
   });
 }
 
-// ---------- Liste ----------
+// ---------- Übersicht ----------
 const MEAL_CHIPS = [['alle', 'Alle'], ...Object.entries(MEALS)];
 const TAG_CHIPS = ['schnell', 'highprotein', 'airfryer', 'ohnekochen', 'mealprep', 'onepot', 'guenstig'].filter((t) => TAGS[t]);
+const COZY = /suppe|curry|dal|chili|risotto|bolognese|porridge/;
+const SHELVES = [
+  { title: 'Schnell & einfach', emoji: '⚡', pick: (r) => r.allTags.includes('schnell') },
+  { title: 'Wohlfühlessen', emoji: '🍲', pick: (r) => COZY.test(r.id) },
+  { title: 'Proteinbomben', emoji: '💪', pick: (r) => r.allTags.includes('highprotein'), sort: (a, b) => b.nut.p - a.nut.p },
+  { title: 'Aus der Heißluftfritteuse', emoji: '🍟', pick: (r) => r.allTags.includes('airfryer') },
+  { title: 'Frühstück', emoji: '🥣', pick: (r) => r.meals.includes('fruehstueck') },
+  { title: 'Kleine Snacks', emoji: '🥜', pick: (r) => r.meals.includes('snack') },
+];
 
-function recipeRow(r, ctx) {
-  return h('div', { class: 'film-row' },
-    h('button', { class: 'film-body', type: 'button', onclick: () => openRecipe(r, ctx) },
-      recipeImage(r, { size: 'row' }),
-      h('span', { class: 'list-main' },
-        h('span', { class: 'list-title' }, r.name),
-        h('span', { class: 'list-sub' }, `⏱ ${r.time}′ · ${fmtInt(r.nut.kcal)} kcal · ${r.nut.p} g P`),
-        h('span', { class: 'list-sub' }, r.meals.map((m) => MEALS[m]).join(', ')))),
-    h('button', { class: 'film-seen', type: 'button', 'aria-label': `${r.name} als gegessen markieren`, onclick: () => setEaten(r, true, () => ctx.refresh()) },
-      icon('check', 18), h('span', null, 'Gegessen')));
+/** Rezept des Tages: passend zur Tageszeit, bevorzugt noch nicht gegessen – jeden Tag ein anderes. */
+function dishOfTheDay(eaten) {
+  const hr = new Date().getHours();
+  const meal = hr < 11 ? 'fruehstueck' : hr < 15 ? 'mittag' : hr < 17 ? 'snack' : 'abend';
+  let pool = RECIPES.filter((r) => r.meals.includes(meal));
+  const fresh = pool.filter((r) => !eaten.byRecipe.has(r.id));
+  if (fresh.length) pool = fresh;
+  let x = 0;
+  for (const ch of today() + meal) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+  return { r: pool[x % pool.length], meal };
 }
 
-function eatenRow(r, log, rec, ctx) {
-  return h('button', { class: 'list-item film-done', onclick: () => openRecipe(r, ctx) },
-    recipeImage(r, { size: 'row' }),
-    h('span', { class: 'list-main' },
-      h('span', { class: 'list-title' }, r.name),
-      h('span', { class: 'list-sub' }, [`${log.length}× gegessen`, `zuletzt ${formatDate(log[0].date)}`, rec?.stars ? '★'.repeat(rec.stars) : null].filter(Boolean).join(' · '))),
-    icon('chevR', 18));
+function eatenBadge(r, eaten, ratings) {
+  const log = eaten.byRecipe.get(r.id);
+  const stars = ratings.get(rKey(r))?.stars;
+  if (!log && !stars) return null;
+  return h('span', { class: 'ftile-badge' }, log ? `✓ ${log.length}×` : '', stars ? ` ${'★'.repeat(stars)}` : '');
+}
+
+function foodTile(r, ctx, eaten, ratings, { wide = false } = {}) {
+  const ate = eaten.byRecipe.has(r.id);
+  return h('div', { class: 'ftile' + (wide ? ' wide' : '') },
+    h('button', { class: 'ftile-btn', type: 'button', onclick: () => openRecipe(r, ctx), 'aria-label': r.name },
+      recipeImage(r, { size: 'md' }),
+      h('span', { class: 'ftile-shade' }),
+      eatenBadge(r, eaten, ratings),
+      h('span', { class: 'ftile-text' },
+        h('span', { class: 'ftile-title' }, r.name),
+        h('span', { class: 'ftile-meta' }, `⏱ ${r.time}′ · ${fmtInt(r.nut.kcal)} kcal`))),
+    ate ? null : h('button', {
+      class: 'ftile-check', type: 'button', 'aria-label': `${r.name} als gegessen markieren`,
+      onclick: (e) => { e.stopPropagation(); setEaten(r, true, () => ctx.refresh()); },
+    }, icon('check', 16)));
 }
 
 let shownCtx = null;
@@ -183,6 +210,16 @@ on('teilen:import', () => { if (shownCtx && parseHash().path === shownCtx.path) 
 let filter = { q: '', meal: 'alle', tag: null };
 let doneOpen = false;   // „Schon gegessen“ aufgeklappt? (bleibt beim Neuzeichnen erhalten)
 
+function openPersons(ctx) {
+  const sheet = openSheet({
+    title: 'Für wie viele Personen?',
+    body: [
+      h('p', { class: 'small muted' }, 'Gilt für alle Mengenangaben und die Einkaufsliste – im Rezept kannst du es einzeln anpassen.'),
+      segmented([1, 2, 3, 4, 5, 6].map((v) => ({ value: v, label: String(v) })), persons(), async (v) => { await setPersons(v); sheet.close(); toast(`Mengen für ${personsLabel(v)}`); ctx.refresh(); }),
+    ],
+  });
+}
+
 async function renderRecipes(el, ctx) {
   const ratings = await loadRatings();
   const eaten = await eatenIndex();
@@ -190,48 +227,71 @@ async function renderRecipes(el, ctx) {
   const cartCount = cart.recipes.length;
 
   el.append(pageHeader('Kochen', {
-    eyebrow: 'Vegan kochen',
+    eyebrow: 'Vegan & lecker',
     actions: [
+      h('button', { class: 'icon-btn persons-btn', 'aria-label': 'Personenzahl', onclick: () => openPersons(ctx) }, '👥', h('span', null, persons())),
       h('a', { class: 'icon-btn badge-host', 'aria-label': 'Einkaufsliste', href: '#/kochen?v=einkauf' }, icon('list'), cartCount ? h('span', { class: 'count-badge' }, cartCount) : null),
       h('a', { class: 'icon-btn', 'aria-label': 'Teilen per WhatsApp', href: '#/teilen' }, icon('share')),
     ],
   }));
 
-  el.append(h('div', { class: 'persons-row' },
-    h('span', { class: 'small muted' }, '👥 Für'),
-    segmented([1, 2, 3, 4, 5, 6].map((v) => ({ value: v, label: String(v) })), persons(), async (v) => { await setPersons(v); toast(`Mengen für ${personsLabel(v)}`); }),
-    h('span', { class: 'small muted' }, 'Pers.')));
-
-  const search = textInput({ value: filter.q, placeholder: 'Suche: Rezept oder Zutat (z. B. Tofu, Linsen)' });
+  const search = textInput({ value: filter.q, placeholder: 'Worauf hast du Lust? (z. B. Curry, Tofu)' });
   let t;
-  search.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { filter.q = search.value; drawLists(); }, 200); });
+  search.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { filter.q = search.value; draw(); }, 200); });
   el.append(h('div', { class: 'search' }, icon('search', 18), search));
   const chip = (label, active, onclick) => h('button', { type: 'button', class: 'chip' + (active ? ' active' : ''), onclick }, label);
   el.append(h('div', { class: 'chips scroll' },
     MEAL_CHIPS.map(([k, l]) => chip(l, filter.meal === k, () => { filter.meal = k; ctx.refresh(); })),
     TAG_CHIPS.map((k) => chip(TAGS[k], filter.tag === k, () => { filter.tag = filter.tag === k ? null : k; ctx.refresh(); }))));
 
-  const openBox = h('div');
-  const doneBox = h('div');
-  el.append(openBox, doneBox);
+  const box = h('div', { class: 'food-page' });
+  el.append(box);
 
-  function drawLists() {
+  function draw() {
     const q = filter.q.trim().toLowerCase();
+    const filtering = q || filter.meal !== 'alle' || filter.tag;
     const shown = RECIPES.filter((r) => (filter.meal === 'alle' || r.meals.includes(filter.meal))
       && (!filter.tag || r.allTags.includes(filter.tag))
-      && (!q || r.name.toLowerCase().includes(q) || r.ing.some(([id]) => INGREDIENTS[id]?.name.toLowerCase().includes(q))));
+      && (!q || r.name.toLowerCase().includes(q) || teaser(r).toLowerCase().includes(q) || r.ing.some(([id]) => INGREDIENTS[id]?.name.toLowerCase().includes(q))));
     const stars = (r) => ratings.get(rKey(r))?.stars ?? 0;
-    const open = shown.filter((r) => !eaten.byRecipe.has(r.id)).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    const open = shown.filter((r) => !eaten.byRecipe.has(r.id)).sort((a, b) => stars(b) - stars(a) || a.name.localeCompare(b.name, 'de'));
     const done = shown.filter((r) => eaten.byRecipe.has(r.id))
       .sort((a, b) => stars(b) - stars(a) || (eaten.byRecipe.get(b.id)[0].date > eaten.byRecipe.get(a.id)[0].date ? 1 : -1));
-    openBox.replaceChildren(card(`Noch nicht gegessen (${open.length})`, { iconName: 'food' },
-      open.length ? h('div', { class: 'list' }, open.map((r) => recipeRow(r, ctx)))
-        : emptyState(shown.length ? 'Alles schon gegessen – stark!' : 'Kein Rezept passt zu Suche oder Filter.')));
-    doneBox.replaceChildren(done.length ? h('details', { class: 'card collapse', open: doneOpen, ontoggle: (e) => { doneOpen = e.currentTarget.open; } },
-      h('summary', null, icon('check', 20), h('strong', null, `Schon gegessen (${done.length})`), h('span', { class: 'collapse-hint small muted' }, 'antippen zum Aufklappen')),
-      h('div', { class: 'list' }, done.map((r) => eatenRow(r, eaten.byRecipe.get(r.id), ratings.get(rKey(r)), ctx)))) : '');
+    const parts = [];
+
+    if (!filtering) {
+      const { r: hero, meal } = dishOfTheDay(eaten);
+      const label = { fruehstueck: 'zum Frühstück', mittag: 'zum Mittag', snack: 'zwischendurch', abend: 'heute Abend' }[meal];
+      parts.push(h('button', { class: 'food-hero', type: 'button', onclick: () => openRecipe(hero, ctx) },
+        recipeImage(hero, { size: 'lg' }),
+        h('span', { class: 'ftile-shade' }),
+        h('span', { class: 'food-hero-text' },
+          h('span', { class: 'food-hero-kicker' }, `Lust auf … ${label}?`),
+          h('span', { class: 'food-hero-title' }, hero.name),
+          h('span', { class: 'food-hero-teaser' }, teaser(hero)),
+          h('span', { class: 'food-hero-meta' }, `⏱ ${hero.time} Min. · ${fmtInt(hero.nut.kcal)} kcal · ${hero.nut.p} g Protein`))));
+      for (const sh of SHELVES) {
+        const list = RECIPES.filter(sh.pick).sort(sh.sort || ((a, b) => (eaten.byRecipe.has(a.id) - eaten.byRecipe.has(b.id)) || stars(b) - stars(a)));
+        if (list.length < 2) continue;
+        parts.push(h('section', { class: 'shelf' },
+          h('h2', { class: 'shelf-title' }, `${sh.emoji} ${sh.title}`),
+          h('div', { class: 'carousel' }, list.map((r) => foodTile(r, ctx, eaten, ratings, { wide: true })))));
+      }
+    }
+
+    parts.push(h('section', { class: 'shelf' },
+      h('h2', { class: 'shelf-title' }, filtering ? `Treffer (${open.length})` : `Alle Rezepte (${open.length})`),
+      open.length ? h('div', { class: 'fgrid' }, open.map((r) => foodTile(r, ctx, eaten, ratings)))
+        : card(null, {}, emptyState(shown.length ? 'Alles schon gegessen – stark!' : 'Kein Rezept passt – probier ein anderes Stichwort.'))));
+
+    if (done.length) {
+      parts.push(h('details', { class: 'card collapse', open: doneOpen, ontoggle: (e) => { doneOpen = e.currentTarget.open; } },
+        h('summary', null, icon('check', 20), h('strong', null, `Schon gegessen (${done.length})`), h('span', { class: 'collapse-hint small muted' }, 'antippen zum Aufklappen')),
+        h('div', { class: 'fgrid' }, done.map((r) => foodTile(r, ctx, eaten, ratings)))));
+    }
+    box.replaceChildren(...parts);
   }
-  drawLists();
+  draw();
 }
 
 async function renderShopping(el, ctx) {

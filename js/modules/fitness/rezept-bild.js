@@ -318,6 +318,17 @@ export function recipeSvg(r) {
     food.append(el('circle', { cx, cy, r: foodR, fill: 'none', stroke: 'rgba(0,0,0,.12)', 'stroke-width': 2 }));
   }
   svg.append(food);
+  // Glanz auf dem Essen
+  svg.append(el('ellipse', { cx: cx - foodR * 0.35, cy: cy - foodR * 0.4, rx: foodR * 0.38, ry: foodR * 0.16, fill: 'rgba(255,255,255,.18)', transform: `rotate(-25 ${cx} ${cy})` }));
+  // Dampf über warmen Gerichten
+  const hot = !(r.allTags || []).some((t) => ['kalt', 'ohnekochen'].includes(t));
+  if (hot) {
+    const steam = el('g', { class: 'rsvg-steam', fill: 'none', stroke: 'rgba(255,255,255,.75)', 'stroke-width': 3, 'stroke-linecap': 'round' });
+    [-14, 0, 14].forEach((dx, i) => steam.append(el('path', {
+      d: `M${cx + dx} ${cy - 6} q-6 -9 0 -18 q6 -9 0 -18`, style: `animation-delay:${i * 0.6}s`,
+    })));
+    svg.append(steam);
+  }
   return svg;
 }
 

@@ -4,7 +4,7 @@
 import { buildReminder, slotForHour } from './js/core/reminders.js';
 import { kv } from './js/core/db.js';
 
-const VERSION = '0.17.0';
+const VERSION = '0.18.0';
 const CACHE = `mathub-${VERSION}`;
 const POSTER_CACHE = 'posters-v1';   // Filmposter von Wikipedia – bleibt über Updates erhalten
 const POSTER_HOST = 'upload.wikimedia.org';
@@ -38,6 +38,7 @@ const PRECACHE = [
   './js/modules/hub/settings.js',
   './js/modules/fitness/food-data.js',
   './js/modules/fitness/kochen.js',
+  './js/modules/fitness/rezept-texte.js',
   './js/modules/fitness/ratings.js',
   './js/modules/fitness/rezept-bild.js',
   './js/modules/fitness/rezept-log.js',

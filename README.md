@@ -20,13 +20,13 @@ Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue
 
 Alle Daten liegen nur auf dem Handy. Filme sowie gegessene und bewertete Rezepte teilst du **per WhatsApp** (Link antippen = übernehmen) – so liegen sie auch bei den anderen. Einkaufsliste und Einstellungen gehen verloren, wenn die Browserdaten gelöscht werden.
 
-## Funktionen (Version 0.17)
+## Funktionen (Version 0.18)
 
 | Bereich | Was du machen kannst |
 |---|---|
 | **Home** | Begrüßung und bei jedem Start ein neues englisches Filmzitat oder ein alberner Spruch; Zahnrad → Einstellungen |
 | **Filme** | neue Filme automatisch mit Wikipedia-Infos; Merkliste mit Titelbildern (von Wikipedia, offline gespeichert), Kategorien & Filter, ausführlichen Infos, „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
-| **Kochen** | Alle veganen Rezepte (37) als Liste wie bei den Filmen, mit gezeichneten Bildern; „Gegessen“ per Tipp (mit Rückgängig), danach bewerten; schon gegessene eingeklappt; Personenzahl wählbar (alle Mengen & Einkaufsliste); Suche & Filter; Einkaufsliste aus gewählten Rezepten |
+| **Kochen** | Appetitliche Rezeptübersicht: „Lust auf …?“-Rezept des Tages, Themen-Karussells (Schnell, Wohlfühlessen, Proteinbomben, Heißluftfritteuse, Frühstück, Snacks), großes Bildraster mit Kurztexten; gezeichnete Bilder mit Licht & Dampf; „Gegessen“ per ✓ (schon gegessene eingeklappt), danach bewerten; Personenzahl wählbar; Einkaufsliste |
 | **Teilen** | Nach jeder Änderung Banner „Jetzt teilen“ → WhatsApp öffnet sich (auf Wunsch direkt im Chat) mit Link; die andere Person tippt ihn an und Mathub übernimmt Filme, Gesehen, Bewertungen, „Heute Abend“ und gegessene Rezepte – ohne Konto |
 | **Design** | 9 Farbschemata (Mint, Kino, Popcorn, Ozean, Lavendel, Neon, Retro, Wald, Tomate) oder eigene Akzentfarbe, Hell/Dunkel/System, Form (rund, extra weich, kantig), Schrift (modern, klassisch, Schreibmaschine, verspielt) |
 | **Erinnerungen** | Push um 7:30 und 20:30 Uhr: Film für heute Abend, sonst ein Spruch |

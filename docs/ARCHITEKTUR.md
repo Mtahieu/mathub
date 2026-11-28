@@ -153,7 +153,7 @@ Handy B: Link in WhatsApp antippen → Mathub öffnet sich → übernimmt automa
 
 ## Kochen
 
-`kochen.js`: Liste aller veganen Rezepte wie die Filme – „Noch nicht gegessen“ und eingeklappt „Schon gegessen“ (mind. ein Eintrag in `gegessen`). Bewertung erscheint wie bei Filmen erst nach dem Essen. Personenzahl: `prefs.food.servings` (Startwert im Rezept, dort änderbar). Einkaufsliste: kv `kochen:einkauf` `{recipes:[{r, n}], checked}`. `food-data.js` enthält weiterhin alle Rezepte, exportiert als `RECIPES` nur vegane.
+`kochen.js`: bildbetonte Übersicht – Rezept des Tages (passend zur Tageszeit, bevorzugt noch nicht gegessen), Themen-Karussells (`SHELVES`), Raster „Alle Rezepte“ und eingeklappt „Schon gegessen“ (mind. ein Eintrag in `gegessen`). Kurztexte: `rezept-texte.js` (neues Rezept → Eintrag in `TEASER`). Bewertung erscheint wie bei Filmen erst nach dem Essen. Personenzahl: `prefs.food.servings` (Startwert im Rezept, dort änderbar). Einkaufsliste: kv `kochen:einkauf` `{recipes:[{r, n}], checked}`. `food-data.js` enthält weiterhin alle Rezepte, exportiert als `RECIPES` nur vegane.
 
 ## Backup
 
