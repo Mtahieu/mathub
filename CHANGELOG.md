@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.1 – 2026-11-28
+
+- **Neue Filme:** Sinners (2025, wieder dabei), Saw (2004, erster Teil), When Harry Met Sally… / Harry und Sally (1989), Whiplash (2014) und V/H/S (2012, erster Teil der Horror-Reihe) – mit Beschreibung, „Warum anschauen?“, Kategorien, Stimmung, Intensität und Titelbild über Wikipedia.
+- Datenmigration 6 ergänzt sie auf Geräten mit bestehender Liste; schon selbst angelegte Filme mit gleichem Titel werden nicht verdoppelt.
+
 ## 0.15.0 – 2026-11-28
 
 - **Teilen per WhatsApp statt Google Drive** – ohne Konto, ohne Registrierung: Nach jeder Änderung (Film gesehen, neuer Film, Bewertung, gegessen, „Heute Abend“) erscheint unten „Jetzt teilen“. Ein Tipp öffnet WhatsApp mit fertiger Nachricht und Link – mit hinterlegter Nummer direkt im richtigen Chat (Filme → Teilen-Symbol). Die andere Person tippt den Link an, Mathub übernimmt alles automatisch, auch wenn die App schon offen ist. Normalerweise werden nur die Änderungen seit dem letzten Teilen geschickt; „Alles senden“ für Neue.

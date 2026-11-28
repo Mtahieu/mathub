@@ -13,7 +13,7 @@ import { emit } from './events.js';
 
 const DB_NAME = 'mathub';
 export const DB_VERSION = 1;
-export const DATA_VERSION = 5;
+export const DATA_VERSION = 6;
 
 let dbPromise = null;
 
@@ -211,6 +211,24 @@ const MIGRATIONS = [
         catalogId: 'smile-2', title: 'Smile 2', year: 2024, runtime: 127,
         genres: ['horror', 'thriller'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '😁',
       }, '2026-11-28');
+    },
+  },
+  {
+    // 0.15.1: Sinners (wieder), Saw, When Harry Met Sally…, Whiplash und V/H/S in die Filmliste.
+    to: 6,
+    async run() {
+      if (!(await kv.get('filme:seeded', false))) return;
+      const films = (await items.all('film')).filter((f) => !f.deleted);
+      const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const has = (cid, ...titles) => films.some((f) => f.catalogId === cid || titles.some((t) => norm(f.title) === norm(t)));
+      const add = [
+        [['sinners', 'Sinners'], { title: 'Sinners', year: 2025, runtime: 137, genres: ['horror', 'thriller', 'drama'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '🎸' }],
+        [['saw', 'Saw'], { title: 'Saw', year: 2004, runtime: 103, genres: ['horror', 'thriller', 'krimi'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '🪚' }],
+        [['when-harry-met-sally', 'When Harry Met Sally', 'Harry und Sally'], { title: 'When Harry Met Sally…', year: 1989, runtime: 96, genres: ['romantik', 'komoedie'], moods: ['lachen'], intensity: 1, emoji: '💑' }],
+        [['whiplash', 'Whiplash'], { title: 'Whiplash', year: 2014, runtime: 107, genres: ['drama'], moods: ['spannung', 'nachdenken'], intensity: 2, emoji: '🥁' }],
+        [['vhs', 'V/H/S', 'VHS'], { title: 'V/H/S', year: 2012, runtime: 116, genres: ['horror'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '📼' }],
+      ];
+      for (const [[cid, ...titles], rec] of add) if (!has(cid, ...titles)) await addCatalogFilm({ catalogId: cid, ...rec }, '2026-11-28');
     },
   },
 ];
