@@ -755,3 +755,4 @@ details.collapse .fgrid { margin-top: 4px; }
 .ka-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: calc(10px * var(--rs, 1)); flex: none; }
 .ka-source { margin: 2px 0 0; }
 .home-slot { min-height: 0; }
+.lokal-btn { width: 100%; text-decoration: none; }

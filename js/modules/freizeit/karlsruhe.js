@@ -12,6 +12,14 @@ import { today, addDays, fromKey, formatDate } from '../../core/dates.js';
 export const KKB = 'https://keepkarlsruheboring.org';
 const FRESH_MS = 15 * 60 * 1000;
 
+// App „lokal“ (Tobias Dierich) – keine öffentliche Schnittstelle, daher nur ein Knopf zum Öffnen.
+// Android: öffnet die installierte App (Paket co.lokalapp.app), sonst die Webseite.
+const LOKAL_WEB = 'https://lokalapp.co/';
+const lokalHref = () => (/android/i.test(navigator.userAgent)
+  ? `intent://lokalapp.co/#Intent;scheme=https;package=co.lokalapp.app;S.browser_fallback_url=${encodeURIComponent(LOKAL_WEB)};end`
+  : LOKAL_WEB);
+const lokalButton = () => h('a', { class: 'btn lokal-btn', href: lokalHref(), target: '_blank', rel: 'noopener' }, '✨ Mehr in lokal ansehen');
+
 const pad = (n) => String(n).padStart(2, '0');
 const hm = (sec) => { const d = new Date(sec * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const eventUrl = (e) => `${KKB}/event/${encodeURIComponent(e.slug || e.id)}`;
@@ -78,6 +86,7 @@ async function homeCard() {
   },
   list.length ? h('div', { class: 'list' }, list.map((e) => eventRow(e)))
     : h('p', { class: 'small muted' }, problemText(r) || (r.events.length ? 'Für heute ist schon alles vorbei – schau morgen wieder rein.' : 'Heute ist nichts eingetragen.')),
+  lokalButton(),
   h('p', { class: 'ka-source small muted' }, 'Quelle: ', h('a', { class: 'link', href: KKB, target: '_blank', rel: 'noopener' }, 'Keep Karlsruhe Boring'), r.offline ? ' · gespeicherter Stand' : ''));
 }
 
@@ -94,6 +103,7 @@ async function render(el, ctx) {
   el.append(card(formatDate(date, 'long'), { iconName: 'calendar' },
     r.events.length ? h('div', { class: 'list' }, r.events.map((e) => eventRow(e, { thumbs: true })))
       : emptyState(problemText(r) || 'Für diesen Tag ist nichts eingetragen.', h('a', { class: 'btn', href: KKB, target: '_blank', rel: 'noopener' }, 'Auf keepkarlsruheboring.org schauen'))));
+  el.append(lokalButton());
   el.append(h('p', { class: 'muted small center' },
     'Termine von ', h('a', { class: 'link', href: KKB, target: '_blank', rel: 'noopener' }, 'Keep Karlsruhe Boring'),
     ' – dem offenen Veranstaltungskalender für Karlsruhe, in den jede Person Termine eintragen kann.',

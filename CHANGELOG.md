@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.2 – 2026-11-28
+
+- **„✨ Mehr in lokal ansehen“** in „Heute in Karlsruhe“ (Startseite und Übersicht): öffnet die App „lokal“ – auf Android direkt die installierte App, sonst lokalapp.co im Browser.
+
 ## 0.19.1 – 2026-11-28
 
 - Veranstaltungen kommen jetzt von der richtigen Adresse **keepkarlsruheboring.org** (vorher fälschlich .de). Zwischengespeicherte Termine werden neu geladen.
