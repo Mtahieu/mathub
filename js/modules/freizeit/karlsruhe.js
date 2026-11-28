@@ -12,12 +12,19 @@ import { today, addDays, fromKey, formatDate } from '../../core/dates.js';
 export const KKB = 'https://keepkarlsruheboring.org';
 const FRESH_MS = 15 * 60 * 1000;
 
-// App „lokal“ (Tobias Dierich) – keine öffentliche Schnittstelle, daher nur ein Knopf zum Öffnen.
-// Android: öffnet die installierte App (Paket co.lokalapp.app), sonst die Webseite.
-const LOKAL_WEB = 'https://lokalapp.co/';
-const lokalHref = () => (/android/i.test(navigator.userAgent)
-  ? `intent://lokalapp.co/#Intent;scheme=https;package=co.lokalapp.app;S.browser_fallback_url=${encodeURIComponent(LOKAL_WEB)};end`
-  : LOKAL_WEB);
+// App „lokal“ (Tobias Dierich) – keine öffentliche Schnittstelle, daher nur ein Knopf zum Öffnen der App.
+// Android: startet die installierte App (Paket co.lokalapp.app), fehlt sie → Play Store.
+// iPhone/iPad: App Store (dort „Öffnen“, wenn installiert). Sonst: Play-Store-Seite.
+const LOKAL_PLAY = 'https://play.google.com/store/apps/details?id=co.lokalapp.app';
+const LOKAL_APPSTORE = 'https://apps.apple.com/de/app/lokal/id6752640011';
+const lokalHref = () => {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) {
+    return `intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=co.lokalapp.app;S.browser_fallback_url=${encodeURIComponent(LOKAL_PLAY)};end`;
+  }
+  if (/iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return LOKAL_APPSTORE;
+  return LOKAL_PLAY;
+};
 const lokalButton = () => h('a', { class: 'btn lokal-btn', href: lokalHref(), target: '_blank', rel: 'noopener' }, '✨ Mehr in lokal ansehen');
 
 const pad = (n) => String(n).padStart(2, '0');

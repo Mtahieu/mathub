@@ -162,7 +162,7 @@ Seit 0.14 gibt es keine Backup-Funktion mehr – Filme und Rezept-Daten liegen d
 
 ## Veranstaltungen Karlsruhe
 
-`karlsruhe.js` lädt Termine von [Keep Karlsruhe Boring](https://keepkarlsruheboring.org) (Gancio): `GET /api/events?start=<unix>&end=<unix>` für heute bzw. morgen, ohne Anmeldung. Startseite (`homeCard`): die noch kommenden Termine von heute (max. 4); Seite `#/karlsruhe`: ganzer Tag, Umschalter Heute/Morgen. Ergebnis 15 Min. gemerkt (kv `ka:events2`), ohne Netz der letzte Stand. Ein Tipp öffnet den Termin auf keepkarlsruheboring.org. Knopf „Mehr in lokal ansehen“: öffnet die App „lokal“ (Tobias Dierich; keine öffentliche Schnittstelle) – Android per `intent://` (Paket `co.lokalapp.app`, sonst lokalapp.co), sonst lokalapp.co.
+`karlsruhe.js` lädt Termine von [Keep Karlsruhe Boring](https://keepkarlsruheboring.org) (Gancio): `GET /api/events?start=<unix>&end=<unix>` für heute bzw. morgen, ohne Anmeldung. Startseite (`homeCard`): die noch kommenden Termine von heute (max. 4); Seite `#/karlsruhe`: ganzer Tag, Umschalter Heute/Morgen. Ergebnis 15 Min. gemerkt (kv `ka:events2`), ohne Netz der letzte Stand. Ein Tipp öffnet den Termin auf keepkarlsruheboring.org. Knopf „Mehr in lokal ansehen“: öffnet die App „lokal“ (Tobias Dierich; keine öffentliche Schnittstelle) – Android per `intent://` (Paket `co.lokalapp.app`, fehlt sie → Play Store), iPhone → App Store.
 
 ## Filmposter
 

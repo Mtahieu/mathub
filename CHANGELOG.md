@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.3 – 2026-11-28
+
+- „✨ Mehr in lokal ansehen“ öffnet jetzt direkt die App statt einer Webseite: auf Android die installierte lokal-App (fehlt sie, deren Seite im Play Store), auf dem iPhone den App Store.
+
 ## 0.19.2 – 2026-11-28
 
 - **„✨ Mehr in lokal ansehen“** in „Heute in Karlsruhe“ (Startseite und Übersicht): öffnet die App „lokal“ – auf Android direkt die installierte App, sonst lokalapp.co im Browser.
