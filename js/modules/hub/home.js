@@ -1,6 +1,6 @@
 // Startseite: Begrüßung und ein Film-Zitat bzw. alberner Spruch, der bei jedem App-Start wechselt.
 
-import { registerModule } from '../../core/registry.js';
+import { registerModule, getModules } from '../../core/registry.js';
 import { h, icon } from '../../core/ui.js';
 import { getSettingsSync } from '../../core/settings.js';
 import { kv } from '../../core/db.js';
@@ -44,6 +44,13 @@ async function render(el) {
   el.append(h('figure', { class: 'home-quote' },
     h('blockquote', { lang: 'en' }, `“${q.text}”`),
     h('figcaption', null, q.src ? `— ${q.src}` : '— Mathub-Weisheit')));
+  // Karten der Module (homeCard), z. B. „Heute in Karlsruhe“ – laden im Hintergrund, Startseite bleibt sofort da
+  for (const m of getModules()) {
+    if (!m.homeCard) continue;
+    const slot = h('div', { class: 'home-slot' });
+    el.append(slot);
+    Promise.resolve(m.homeCard()).then((c) => { if (c) slot.replaceWith(c); else slot.remove(); }).catch(() => slot.remove());
+  }
 }
 
 registerModule({

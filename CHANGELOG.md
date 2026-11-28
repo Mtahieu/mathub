@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.0 – 2026-11-28
+
+- **Heute in Karlsruhe:** Die Startseite zeigt unter dem Spruch die noch anstehenden Veranstaltungen von heute aus [Keep Karlsruhe Boring](https://keepkarlsruheboring.de) – mit Uhrzeit, Ort und Schlagworten; ein Tipp öffnet den Termin. „Mehr“ führt zur Übersicht mit Heute/Morgen und Bildern. Ohne Netz bleibt der zuletzt geladene Stand sichtbar. Keine Anmeldung nötig.
+
 ## 0.18.0 – 2026-11-28
 
 - **Kochen appetitlich statt Liste:** oben ein großes „Lust auf …?“-Rezept des Tages (passend zur Tageszeit, bevorzugt etwas Neues), darunter wischbare Themen-Karussells – Schnell & einfach, Wohlfühlessen, Proteinbomben, Aus der Heißluftfritteuse, Frühstück, Kleine Snacks – und „Alle Rezepte“ als großes Bildraster mit Titel auf dem Bild.

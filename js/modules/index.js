@@ -15,6 +15,7 @@ import './hub/settings.js';
 // Filme
 import './freizeit/filme.js';
 import './freizeit/teilen.js';
+import './freizeit/karlsruhe.js';
 
 // Kochen (vegane Rezepte, gegessen & bewertet, Einkaufsliste)
 import './fitness/kochen.js';

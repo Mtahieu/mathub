@@ -24,7 +24,7 @@ js/modules/
   fitness/      Bereich „Kochen“ (Ordnername historisch): kochen (Rezeptliste wie Filme, Einkaufsliste),
                 food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-bild (gezeichnete Rezeptbilder aus den Zutaten),
                 rezept-log (gegessen), ratings (Bewertungen) – gegessen & Bewertungen werden geteilt
-  freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
+  freizeit/     karlsruhe (Veranstaltungen von keepkarlsruheboring.de), filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
                 WhatsApp-Link), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
@@ -94,7 +94,8 @@ registerModule({
   reminderNote(slot, date) { return 'Zeile' },         // Zusatzzeile in Push-Erinnerungen (async ok)
   charts: [{ id, title, render(el, { from, to, data }) {} }],  // Diagramme (derzeit ohne eigene Seite)
   loadData(from, to) { return … },                     // Zusatzdaten außerhalb von entries → data.ext[id] (async ok)
-  launch() {},                                          // beim Start vor dem Router (z. B. Rückkehr von Google-Anmeldung)
+  launch() {},                                          // beim Start vor dem Router (z. B. geteilter WhatsApp-Link)
+  homeCard() { return card(…) },                        // Karte auf der Startseite (async ok, lädt im Hintergrund)
 });
 ```
 
@@ -158,6 +159,10 @@ Handy B: Link in WhatsApp antippen → Mathub öffnet sich → übernimmt automa
 ## Backup
 
 Seit 0.14 gibt es keine Backup-Funktion mehr – Filme und Rezept-Daten liegen durch das Teilen auch bei den anderen. `exportAll`/`importAll` in db.js bleiben für Notfälle bestehen, sind aber nicht mehr in der App erreichbar.
+
+## Veranstaltungen Karlsruhe
+
+`karlsruhe.js` lädt Termine von [Keep Karlsruhe Boring](https://keepkarlsruheboring.de) (Gancio): `GET /api/events?start=<unix>&end=<unix>` für heute bzw. morgen, ohne Anmeldung. Startseite (`homeCard`): die noch kommenden Termine von heute (max. 4); Seite `#/karlsruhe`: ganzer Tag, Umschalter Heute/Morgen. Ergebnis 15 Min. gemerkt (kv `ka:events`), ohne Netz der letzte Stand. Ein Tipp öffnet den Termin auf keepkarlsruheboring.de.
 
 ## Filmposter
 
