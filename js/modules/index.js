@@ -14,6 +14,7 @@ import './hub/settings.js';
 
 // Filme
 import './freizeit/filme.js';
+import './freizeit/teilen.js';
 
 // Kochen (Rezepte, Wochenplan, Einkaufsliste)
 import './fitness/nutrition.js';

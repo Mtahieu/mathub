@@ -150,14 +150,15 @@ async function render(el, ctx) {
   const persisted = await navigator.storage?.persisted?.().catch(() => false);
   const est = await navigator.storage?.estimate?.().catch(() => null);
   el.append(card('Daten', { iconName: 'shield', cls: 'anchor-daten' },
-    h('p', { class: 'muted small' }, 'Filme sowie gegessene und bewertete Rezepte liegen in der gemeinsamen Liste (Filme → ☁️) und sind dort gesichert. Wochenplan, Einkaufsliste und Einstellungen gibt es nur auf diesem Gerät.'),
+    h('p', { class: 'muted small' }, 'Alle Daten liegen nur auf diesem Gerät. Filme sowie gegessene und bewertete Rezepte teilst du per WhatsApp – so liegen sie auch bei den anderen.'),
+    h('a', { class: 'btn', href: '#/teilen' }, icon('share', 18), ' Teilen per WhatsApp'),
     h('div', { class: 'kv-list small' },
       h('div', null, h('span', { class: 'muted' }, 'Speicher geschützt'), h('span', null, persisted ? 'ja' : 'nein (App installieren hilft)')),
       est?.usage != null ? h('div', null, h('span', { class: 'muted' }, 'Belegt'), h('span', null, `${fmt(est.usage / 1024 / 1024, 1)} MB`)) : null),
     h('button', {
       class: 'btn btn-danger',
       onclick: async () => {
-        if (!await confirmDialog('Alle Daten auf diesem Gerät werden gelöscht. Die gemeinsame Liste in Google Drive bleibt bestehen.', { okLabel: 'Alles löschen', danger: true })) return;
+        if (!await confirmDialog('Alle Daten auf diesem Gerät werden gelöscht. Was du schon geteilt hast, haben die anderen noch.', { okLabel: 'Alles löschen', danger: true })) return;
         await clearAll();
         location.reload();
       },

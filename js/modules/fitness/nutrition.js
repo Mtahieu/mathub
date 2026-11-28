@@ -24,7 +24,7 @@ import {
   formatAmount, equipmentOk,
 } from './food-data.js';
 import { loadRatings, rate, isFavorite, isDisliked } from './ratings.js';
-import { photoFor, creditText, isPhotoHidden, setPhotoHidden } from './rezept-fotos.js';
+import { recipeSvg, hasIngredientLook } from './rezept-bild.js';
 import { markEaten, unmarkEaten, eatenIndex } from './rezept-log.js';
 
 const SLOTS = ['fruehstueck', 'mittag', 'abend'];
@@ -222,24 +222,10 @@ function shoppingText(list, plan, weekStart) {
 }
 
 // ---------- Bild ----------
-/**
- * Rezeptbild: zuerst illustriert (offline: Farbverlauf, Hauptgericht und Zutaten als Emoji),
- * dann – sobald geladen – ein echtes Foto des Gerichts von Wikipedia (siehe rezept-fotos.js).
- */
+/** Rezeptbild: aus den Zutaten gezeichnet (rezept-bild.js); Kantine/Auswärts als Emoji-Kachel. */
 export function recipeImage(r, { size = 'md' } = {}) {
-  const el = illustratedImage(r, size);
-  if (r.id) photoFor(r.id).then((ph) => setPhoto(el, ph));
-  return el;
-}
-
-function setPhoto(el, ph) {
-  if (!ph?.url) return;
-  const img = new Image();
-  img.alt = '';
-  img.decoding = 'async';
-  img.className = 'rimg-photo';
-  img.onload = () => { el.querySelector('.rimg-photo')?.remove(); el.classList.add('has-photo'); el.append(img); };
-  img.src = ph.url;
+  if (!hasIngredientLook(r)) return illustratedImage(r, size);
+  return h('div', { class: `rimg rimg-${size} rimg-drawn`, role: 'img', 'aria-label': r.name }, recipeSvg(r));
 }
 
 function illustratedImage(r, size) {
@@ -281,27 +267,7 @@ async function openRecipe(r, after) {
   const setP = (n) => { portions = Math.max(1, Math.min(8, n)); pLabel.textContent = `${portions} ${portions === 1 ? 'Portion' : 'Portionen'}`; renderIng(); };
   setP(portions);
 
-  let bigImg = recipeImage(r, { size: 'lg' });
-  const photoSource = h('div', { class: 'small muted photo-src' });
-  const swapImage = () => { const nx = recipeImage(r, { size: 'lg' }); bigImg.replaceWith(nx); bigImg = nx; };
-  const showSource = async () => {
-    if (await isPhotoHidden(r.id)) {
-      photoSource.replaceChildren(h('span', null, 'Icon statt Foto'), h('button', {
-        type: 'button', class: 'btn small',
-        onclick: async () => { await setPhotoHidden(r.id, false); swapImage(); showSource(); after?.(); },
-      }, '📷 Foto wieder zeigen'));
-      return;
-    }
-    const ph = await photoFor(r.id);
-    if (!ph?.url) { photoSource.replaceChildren(); return; }
-    photoSource.replaceChildren(
-      h('span', null, 'Foto: ', ph.page ? h('a', { class: 'link', href: ph.page, target: '_blank', rel: 'noopener' }, creditText(ph) || 'Wikimedia Commons') : (creditText(ph) || 'Wikimedia Commons')),
-      h('button', {
-        type: 'button', class: 'btn small',
-        onclick: async () => { await setPhotoHidden(r.id, true); swapImage(); showSource(); after?.(); },
-      }, '🙈 Gefällt mir nicht'));
-  };
-  showSource();
+  const bigImg = recipeImage(r, { size: 'lg' });
 
   // Gegessen (wird mit der gemeinsamen Liste geteilt)
   const eatenBox = h('div', { class: 'eaten-box' });
@@ -328,7 +294,6 @@ async function openRecipe(r, after) {
     title: r.name,
     body: [
       bigImg,
-      photoSource,
       eatenBox,
       h('div', { class: 'chips' },
         h('span', { class: 'tag', dataset: { diet: r.diet } }, DIETS[r.diet]),
@@ -838,10 +803,10 @@ async function renderShopping(el, ctx) {
 }
 
 // ---------- Seite ----------
-// Neue Bewertungen/Gegessen-Haken von anderen (gemeinsame Liste) → Seite neu zeichnen
+// Bewertungen/Gegessen-Haken von anderen (per WhatsApp-Link übernommen) → Seite neu zeichnen
 let shownCtx = null;
-on('filme:sync', (e) => {
-  if (shownCtx && e.status === 'done' && e.changedLocal && parseHash().path === shownCtx.path) shownCtx.refresh();
+on('teilen:import', () => {
+  if (shownCtx && parseHash().path === shownCtx.path) shownCtx.refresh();
 });
 
 async function render(el, ctx) {

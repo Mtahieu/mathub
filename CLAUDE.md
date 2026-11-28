@@ -4,7 +4,7 @@ Mathub ist eine persönliche PWA des Repo-Besitzers (GitHub: Mtahieu), gehostet 
 
 ## Grundsätze
 - **Keine persönlichen Daten ins Repo.** Werte (Filme, Bewertungen, Pläne, Einstellungen) gibt der Nutzer in der App ein; sie liegen nur in IndexedDB auf dem Handy.
-- **Kein Build, keine Abhängigkeiten, keine CDNs.** Alles muss offline funktionieren (Vanilla JS, ES-Module). Ausnahmen (optional, mit Offline-Ersatz): Filmposter, Film-Infos und Rezeptfotos von Wikipedia/Wikidata/Wikimedia Commons sowie die gemeinsame Liste (Filme & Rezepte) über Google Drive (siehe ARCHITEKTUR.md).
+- **Kein Build, keine Abhängigkeiten, keine CDNs.** Alles muss offline funktionieren (Vanilla JS, ES-Module). Ausnahme (optional, mit Offline-Ersatz): Filmposter und Film-Infos von Wikipedia/Wikidata. Keine Dienste mit Registrierung/API-Schlüssel. Geteilt wird per WhatsApp-Link (siehe ARCHITEKTUR.md).
 - **Modular erweitern:** neue Funktionen als Modul (siehe `docs/ARCHITEKTUR.md`), nicht in den Kern schreiben.
 - **Daten nie brechen:** Struktur-Änderungen nur mit Migration (`db.js`: `DATA_VERSION` + `MIGRATIONS`). Bestehende `type`/`kind`-Formate rückwärtskompatibel halten.
 - Mobile first (Android/Chrome), große Touch-Ziele, Hell/Dunkel über CSS-Variablen.
@@ -15,4 +15,4 @@ Mathub ist eine persönliche PWA des Repo-Besitzers (GitHub: Mtahieu), gehostet 
 3. Optional testen: `python3 -m http.server 8000` + Headless-Chrome mit Handy-Viewport (390×844).
 4. `node tools/bump-version.mjs X.Y.Z "Kurzbeschreibung"` – **ohne Versionssprung sieht das Handy kein Update.**
 5. CHANGELOG-Eintrag ausformulieren, committen, pushen. GitHub Pages veröffentlicht automatisch.
-6. Datenmigrationen besonders vorsichtig: Es gibt kein Backup mehr – gesichert ist nur die gemeinsame Liste (Filme, gegessene & bewertete Rezepte).
+6. Datenmigrationen besonders vorsichtig: Es gibt kein Backup mehr – Filme und Rezept-Daten existieren nur auf den Handys (und bei den Personen, mit denen geteilt wurde).

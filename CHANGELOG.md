@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0 – 2026-11-28
+
+- **Teilen per WhatsApp statt Google Drive** – ohne Konto, ohne Registrierung: Nach jeder Änderung (Film gesehen, neuer Film, Bewertung, gegessen, „Heute Abend“) erscheint unten „Jetzt teilen“. Ein Tipp öffnet WhatsApp mit fertiger Nachricht und Link – mit hinterlegter Nummer direkt im richtigen Chat (Filme → Teilen-Symbol). Die andere Person tippt den Link an, Mathub übernimmt alles automatisch, auch wenn die App schon offen ist. Normalerweise werden nur die Änderungen seit dem letzten Teilen geschickt; „Alles senden“ für Neue.
+- Gleiche Filme, die zwei Leute getrennt angelegt haben, werden beim Übernehmen zusammengeführt.
+- Google-Drive-Anbindung und Einrichtung (Client-ID) entfernt.
+- **Rezeptbilder neu gezeichnet:** Jedes Rezept bekommt ein eigenes, aus seinen Zutaten erzeugtes Bild – Schüssel, Teller, Brett oder Glas mit passender Grundfarbe (Tomatensauce, Kokos-Curry, Haferbrei …) und Toppings (Brokkoliröschen, Kichererbsen, Avocado, Sesam, Tahini-Schwung …). Komplett offline; Wikimedia-Fotos bei Rezepten entfernt.
+- Keine Datenmigration nötig.
+
 ## 0.14.0 – 2026-11-28
 
 - **Kochen nur noch vegan:** Rezeptliste, Suche und Wochenplan zeigen nur die 37 veganen Rezepte; die Diät-Filter sind weg. Nicht-vegane Mahlzeiten in dieser und künftigen Wochen werden beim Öffnen automatisch durch vegane ersetzt (Reste vom Vorabend bleiben stimmig).

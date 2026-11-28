@@ -1,10 +1,10 @@
-// Filme: Merkliste mit „gesehen“-Haken, „Hilf mir zu entscheiden!“ und optional gemeinsamer Liste (Google Drive).
+// Filme: Merkliste mit „gesehen“-Haken, „Hilf mir zu entscheiden!“; Teilen per WhatsApp (teilen.js).
 // items kind 'film': {catalogId?, title, year?, runtime?, genres:[], moods:[], intensity?, emoji?, note?, watched, watchedAt?,
 //   stars?, wiki?, deTitle?, director?, cast?, country?, desc?, updatedBy?, deleted?} – alle Felder werden geteilt.
 //   catalogId verweist auf FILM_CATALOG (filme-data.js) für Beschreibung, Regie usw.
 // kv 'filme:seeded'  Startliste angelegt (danach nie wieder, auch wenn Filme gelöscht werden)
 // kv 'filme:heute'   {value:{date, filmId}, updatedAt, updatedBy} – Entscheidung für den heutigen Abend (geteilt)
-// Datenzugriff: filme-store.js · Abgleich: filme-sync.js · Wikipedia-Infos: filme-wiki.js · Titelbilder: filme-poster.js
+// Datenzugriff: filme-store.js · Teilen: teilen.js · Wikipedia-Infos: filme-wiki.js · Titelbilder: filme-poster.js
 
 import { registerModule } from '../../core/registry.js';
 import { parseHash } from '../../core/router.js';
@@ -18,10 +18,6 @@ import { MOODS, INTENSITY, GENRES, catalogFilm } from './filme-data.js';
 import { findPoster, forgetPoster } from './filme-poster.js';
 import { seedOnce, allFilms, getFilm, saveFilm, patchFilm, deleteFilm, getShared, setShared } from './filme-store.js';
 import { lookupFilm, applyLookup } from './filme-wiki.js';
-import {
-  getSyncConfig, saveSyncConfig, isLinked, getToken, login, launch, mayAutoLogin, syncNow, finishPending, unlink,
-  inviteLink, parseInvite, parseDriveLink, redirectUri,
-} from './filme-sync.js';
 
 const selected = new Set();   // Auswahl für die Entscheidung (bleibt beim Neuzeichnen erhalten)
 
@@ -414,37 +410,14 @@ function tonightCard(f, ctx) {
       h('button', { class: 'btn btn-primary', onclick: () => markWatched(f, () => ctx.refresh()) }, icon('check', 18), ' Gesehen')));
 }
 
-// ---------- Aktualisieren, wenn andere etwas geändert haben ----------
-let current = null;   // {ctx} der angezeigten Seite, die Filme zeigt
-on('filme:sync', (e) => {
-  if (!current) return;
-  const still = parseHash().path === current.ctx.path;
-  if (!still) { current = null; return; }
-  if ((e.status === 'done' && e.changedLocal) || ['auth', 'error', 'unlinked'].includes(e.status)) current.ctx.refresh();
+// ---------- Aktualisieren, wenn per Link etwas übernommen wurde ----------
+let current = null;
+on('teilen:import', () => {
+  if (current && parseHash().path === current.path) current.refresh();
 });
-const watchPage = (ctx) => { current = { ctx }; };
-
-function agoText(t) {
-  if (!t) return 'noch nie';
-  const s = Math.round((Date.now() - t) / 1000);
-  return s < 60 ? 'gerade eben' : s < 3600 ? `vor ${Math.round(s / 60)} Min.` : `vor ${Math.round(s / 3600)} Std.`;
-}
-
-async function syncStatus(ctx, cfg) {
-  if (!isLinked(cfg)) return null;
-  const token = await getToken();
-  const problem = cfg.needsLogin || !token || cfg.lastError;
-  return h('a', { class: 'sync-pill' + (problem ? ' warn' : ''), href: '#/filme?v=teilen' },
-    icon('cloud', 16),
-    h('span', null, cfg.lastError ? 'Gemeinsame Liste: Problem – tippen'
-      : !token ? 'Gemeinsame Liste: Anmeldung nötig'
-        : `Gemeinsam · abgeglichen ${agoText(cfg.lastSync)}`));
-}
 
 async function render(el, ctx) {
-  watchPage(ctx);
-  if (ctx.query.v === 'teilen') return renderShare(el, ctx);
-  const cfg = await getSyncConfig();
+  current = ctx;
   const films = await loadFilms();
   for (const id of [...selected]) if (!films.some((f) => f.id === id && !f.watched)) selected.delete(id);
   const open = films.filter((f) => !f.watched);
@@ -453,12 +426,10 @@ async function render(el, ctx) {
   el.append(pageHeader('Filme', {
     eyebrow: 'Filmabend',
     actions: [
-      h('a', { class: 'icon-btn', 'aria-label': 'Gemeinsame Liste', href: '#/filme?v=teilen' }, icon('cloud')),
+      h('a', { class: 'icon-btn', 'aria-label': 'Teilen per WhatsApp', href: '#/teilen' }, icon('share')),
       h('button', { class: 'icon-btn', 'aria-label': 'Film hinzufügen', onclick: () => openEditor(null, ctx) }, icon('plus')),
     ],
   }));
-  const status = await syncStatus(ctx, cfg);
-  if (status) el.append(status);
 
   const tonight = await tonightPick(films);
   if (tonight) el.append(tonightCard(tonight, ctx));
@@ -494,167 +465,6 @@ async function render(el, ctx) {
   // Hintergrund: offline hinzugefügte Filme mit Wikipedia abgleichen, gemeinsame Liste abgleichen
   const refreshIfHere = () => { if (parseHash().path === ctx.path && !ctx.query.v) ctx.refresh(); };
   enrichPending(films, refreshIfHere);
-  if (isLinked(cfg)) {
-    if (await getToken()) syncNow();
-    else if (await mayAutoLogin(cfg)) login({ silent: true, returnHash: '#/filme' });
-  }
-}
-
-// ---------- Gemeinsame Liste: Einrichtung ----------
-const CONSOLE_URL = 'https://console.cloud.google.com/';
-
-function copyRow(text) {
-  return h('div', { class: 'copy-row' }, h('code', null, text), h('button', {
-    class: 'btn small', type: 'button',
-    onclick: async () => { try { await navigator.clipboard.writeText(text); toast('Kopiert'); } catch { toast('Bitte manuell kopieren'); } },
-  }, 'Kopieren'));
-}
-
-async function shareInvite(cfg) {
-  const url = inviteLink(cfg);
-  const text = 'Hier ist der Link zu unserer gemeinsamen Filmliste in Mathub – öffnen und mit deinem Google-Konto anmelden:';
-  if (navigator.share) {
-    try { await navigator.share({ title: 'Mathub – gemeinsame Filmliste', text, url }); return; } catch { /* abgebrochen */ }
-  }
-  try { await navigator.clipboard.writeText(url); toast('Einladungslink kopiert'); } catch { toast('Bitte Link manuell kopieren'); }
-}
-
-async function renderShare(el, ctx) {
-  let cfg = await getSyncConfig();
-  el.append(pageHeader('Gemeinsame Liste', {
-    eyebrow: 'Filme',
-    actions: h('a', { class: 'icon-btn', 'aria-label': 'Zurück zu den Filmen', href: '#/filme' }, icon('x')),
-  }));
-
-  // Einladungslink geöffnet?
-  if (ctx.query.e) {
-    const inv = parseInvite(ctx.query.e);
-    if (!inv) {
-      el.append(h('div', { class: 'banner warn' }, icon('info'), h('div', null, h('strong', null, 'Einladungslink ungültig'), h('div', { class: 'small muted' }, 'Bitte den Link erneut schicken lassen.'))));
-    } else if (cfg.fileId === inv.fileId) {
-      ctx.navigate('/filme', { v: 'teilen' }, { replace: true });
-      return;
-    } else {
-      await saveSyncConfig({ clientId: inv.clientId, pending: { action: 'join', fileId: inv.fileId, fileName: inv.fileName }, lastError: null, needsLogin: false });
-      ctx.navigate('/filme', { v: 'teilen' }, { replace: true });
-      return;
-    }
-  }
-
-  // Nach der Google-Anmeldung: angefangene Aktion abschließen
-  if (cfg.pending && await getToken()) {
-    el.append(card(null, {}, h('p', { class: 'muted center' }, cfg.pending.action === 'create' ? 'Gemeinsame Liste wird angelegt …' : 'Gemeinsame Liste wird verbunden …')));
-    const r = await finishPending();
-    if (r?.result === 'ok') toast(r.action === 'create' ? 'Gemeinsame Liste angelegt' : 'Mit der gemeinsamen Liste verbunden');
-    if (parseHash().path === ctx.path) ctx.refresh();
-    return;
-  }
-
-  if (cfg.lastError || cfg.needsLogin) {
-    el.append(h('div', { class: 'banner warn' }, icon('info'),
-      h('div', { style: { flex: 1 } }, h('strong', null, cfg.needsLogin ? 'Anmeldung nötig' : 'Problem beim Abgleich'), h('div', { class: 'small muted' }, cfg.lastError || '')),
-      cfg.clientId ? h('button', { class: 'btn small', onclick: () => login({ returnHash: '#/filme?v=teilen' }) }, 'Anmelden') : null));
-  }
-
-  if (isLinked(cfg)) return renderLinked(el, ctx, cfg);
-
-  if (cfg.pending?.action === 'join') {
-    el.append(card('Einladung zur gemeinsamen Filmliste', { iconName: 'cloud' },
-      h('p', null, 'Du wurdest zu einer gemeinsamen Film- & Rezeptliste eingeladen', cfg.pending.fileName ? ` („${cfg.pending.fileName}“)` : '', '. Melde dich mit dem Google-Konto an, mit dem die Liste in Google Drive geteilt wurde.'),
-      h('p', { class: 'small muted' }, 'Deine bisherigen Filme, Rezept-Bewertungen und Gegessen-Haken werden übernommen – was es in der gemeinsamen Liste schon gibt, wird nicht doppelt angelegt. Google fragt nach Zugriff auf Google Drive; Mathub liest und schreibt dort nur diese eine Datei.'),
-      h('div', { class: 'btn-row' },
-        h('button', { class: 'btn', onclick: async () => { await saveSyncConfig({ pending: null }); ctx.refresh(); } }, 'Abbrechen'),
-        h('button', { class: 'btn btn-primary', onclick: () => login({ returnHash: '#/filme?v=teilen' }) }, 'Mit Google anmelden'))));
-    return;
-  }
-
-  // Nicht verbunden: Einladung nutzen, neu anlegen oder bestehende Datei verknüpfen
-  el.append(card('So funktioniert’s', { iconName: 'cloud' },
-    h('p', { class: 'small' }, 'Eure Filme und Rezepte liegen als Datei in Google Drive. Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an – Änderungen (neue Filme, gesehen, Bewertungen, „Heute Abend“, gegessene und bewertete Rezepte) sind nach wenigen Sekunden bei allen.'),
-    h('p', { class: 'small muted' }, 'Du hast einen Einladungslink bekommen? Einfach auf dem Handy öffnen.')));
-
-  const cid = textInput({ value: cfg.clientId, placeholder: '…apps.googleusercontent.com' });
-  cid.setAttribute('autocapitalize', 'off');
-  const folder = textInput({ placeholder: 'Link zum geteilten Drive-Ordner (optional)' });
-  const fileLink = textInput({ placeholder: 'Link zur bestehenden Listendatei' });
-  let mode = 'neu';
-  const modeBox = h('div');
-  const renderMode = () => modeBox.replaceChildren(mode === 'neu'
-    ? field('Ordner in Google Drive', folder, 'Ordner oder geteilte Ablage, die du mit den anderen teilst. Leer = „Meine Ablage“ (dann die Datei danach selbst teilen).')
-    : field('Bestehende Datei', fileLink, 'Link aus Google Drive („Link kopieren“) zur Datei Mathub-Filme.json.'));
-  renderMode();
-
-  el.append(card('Gemeinsame Liste einrichten', { iconName: 'settings' },
-    field('Client-ID', cid, 'Aus deinem Google-Cloud-Projekt (Anleitung unten). Nur einmal nötig – die anderen bekommen sie mit dem Einladungslink.'),
-    segmented([{ value: 'neu', label: 'Neue Liste' }, { value: 'datei', label: 'Datei verknüpfen' }], mode, (v) => { mode = v; renderMode(); }),
-    modeBox,
-    h('button', {
-      class: 'btn btn-primary block',
-      onclick: async () => {
-        const c = cid.value.trim();
-        if (!/^[\w-]+\.apps\.googleusercontent\.com$/.test(c)) { toast('Das sieht nicht wie eine Client-ID aus'); return; }
-        if (mode === 'neu') {
-          const fo = folder.value.trim() ? parseDriveLink(folder.value) : null;
-          if (folder.value.trim() && !fo) { toast('Ordner-Link nicht erkannt'); return; }
-          await saveSyncConfig({ clientId: c, pending: { action: 'create', folderId: fo?.id || null, name: 'Mathub-Filme.json' }, lastError: null, needsLogin: false });
-        } else {
-          const fi = parseDriveLink(fileLink.value);
-          if (!fi || fi.type === 'folder') { toast('Bitte den Link zur Datei einfügen'); return; }
-          await saveSyncConfig({ clientId: c, pending: { action: 'join', fileId: fi.id }, lastError: null, needsLogin: false });
-        }
-        login({ returnHash: '#/filme?v=teilen' });
-      },
-    }, 'Mit Google anmelden & verbinden')));
-
-  el.append(h('details', { class: 'card info-box', open: !cfg.clientId },
-    h('summary', null, icon('info'), h('strong', null, 'Anleitung: Client-ID erstellen (einmalig, nur du)')),
-    h('ol', { class: 'steps small' },
-      h('li', null, 'Am Computer ', h('a', { class: 'link', href: CONSOLE_URL, target: '_blank', rel: 'noopener' }, 'console.cloud.google.com'), ' öffnen, ein neues Projekt „Mathub“ anlegen.'),
-      h('li', null, h('strong', null, 'APIs & Dienste → Bibliothek'), ': „Google Drive API“ ', h('strong', null, 'aktivieren'), '.'),
-      h('li', null, h('strong', null, 'OAuth-Zustimmungsbildschirm'), ' bzw. „Google Auth Platform“: Typ ', h('strong', null, 'Extern'), ', App-Name „Mathub“. Status „Test“ lassen.'),
-      h('li', null, 'Unter ', h('strong', null, 'Zielgruppe → Testnutzer'), ' die Google-Konten ', h('strong', null, 'aller Personen'), ' eintragen, die mitmachen (bis 100).'),
-      h('li', null, h('strong', null, 'Anmeldedaten → OAuth-Client-ID → Webanwendung'), '. Autorisierte JavaScript-Quelle:', copyRow(location.origin)),
-      h('li', null, 'Autorisierte Weiterleitungs-URI:', copyRow(redirectUri())),
-      h('li', null, 'Client-ID kopieren und oben einfügen. Das Client-Secret wird nicht gebraucht.'),
-      h('li', null, 'Google zeigt beim Anmelden „App nicht überprüft“ – das ist eure eigene App: ', h('strong', null, 'Weiter'), '.')),
-    h('p', { class: 'small muted' }, 'Gut zu wissen: Google gibt Web-Apps ohne Server nur einen Zugang für ca. 1 Stunde. Danach meldet Mathub beim Öffnen der Filme kurz neu an (Sprung zu Google und zurück). Änderungen ohne Netz oder Anmeldung werden gemerkt und später abgeglichen.')));
-}
-
-function renderLinked(el, ctx, cfg) {
-  el.append(card('Verbunden', { iconName: 'cloud' },
-    h('div', { class: 'list' },
-      h('div', { class: 'list-item static' }, icon('film', 20), h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, cfg.fileName || 'Mathub-Filme.json'), h('span', { class: 'list-sub' }, `Abgeglichen ${agoText(cfg.lastSync)}`))),
-      h('div', { class: 'list-item static' }, icon('shield', 20), h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, cfg.me || 'Google-Konto'), h('span', { class: 'list-sub' }, cfg.account || '')))),
-    h('div', { class: 'btn-row' },
-      h('button', {
-        class: 'btn',
-        onclick: async () => {
-          if (!(await getToken())) { login({ returnHash: '#/filme?v=teilen' }); return; }
-          toast('Gleiche ab …');
-          const r = await syncNow({ force: true });
-          toast(r === 'ok' ? 'Liste ist aktuell' : r === 'offline' ? 'Keine Verbindung' : 'Abgleich fehlgeschlagen');
-          ctx.refresh();
-        },
-      }, icon('refresh', 18), ' Jetzt abgleichen'))));
-
-  el.append(card('Andere einladen', { iconName: 'share' },
-    h('ol', { class: 'steps small' },
-      h('li', null, 'Den Ordner bzw. die Datei in Google Drive mit der Person teilen (Rolle: ', h('strong', null, 'Bearbeiter'), ').'),
-      h('li', null, 'Ihr Google-Konto im Cloud-Projekt als ', h('strong', null, 'Testnutzer'), ' eintragen.'),
-      h('li', null, 'Einladungslink schicken – auf dem Handy öffnen, mit Google anmelden, fertig.')),
-    h('button', { class: 'btn btn-primary block', onclick: () => shareInvite(cfg) }, icon('share', 18), ' Einladungslink teilen')));
-
-  el.append(card('Verknüpfung', { iconName: 'settings' },
-    h('p', { class: 'small muted' }, 'Die Datei sollte nur über Mathub geändert werden. Trennst du die Verknüpfung, bleibt deine Filmliste auf diesem Handy erhalten, wird aber nicht mehr abgeglichen.'),
-    h('button', {
-      class: 'btn btn-danger',
-      onclick: async () => {
-        if (!await confirmDialog('Verknüpfung mit der gemeinsamen Liste trennen? Die Datei in Google Drive bleibt bestehen.', { okLabel: 'Trennen', danger: true })) return;
-        await unlink();
-        toast('Verknüpfung getrennt');
-        ctx.refresh();
-      },
-    }, 'Verknüpfung trennen')));
 }
 
 // ---------- Heute & Kalender ----------
@@ -687,7 +497,6 @@ registerModule({
   order: 70,
   nav: { tab: 2, label: 'Filme', icon: 'film' },
   routes: [{ path: '/filme', render }],
-  launch,
   todayCard, summarizeDay, reminderNote,
 });
 

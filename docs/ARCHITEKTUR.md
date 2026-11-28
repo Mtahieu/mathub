@@ -23,10 +23,10 @@ js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          home (Startseite mit Begrüßung & Spruch), home-quotes, settings (inkl. Design)
   fitness/      Bereich „Kochen“ (Ordnername historisch): nutrition (Rezepte/Wochenplan/Einkauf),
-                food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-fotos (Fotos über Wikimedia Commons),
+                food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-bild (gezeichnete Rezeptbilder aus den Zutaten),
                 rezept-log (gegessen), ratings (Bewertungen) – gegessen & Bewertungen werden geteilt
-  freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), filme-sync (gemeinsame Liste
-                über Google Drive), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
+  freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
+                WhatsApp-Link), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
@@ -120,17 +120,19 @@ GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ─�
 - Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
 - GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
 
-## Gemeinsame Filmliste (Google Drive)
+## Teilen per WhatsApp
 
 ```
-Handy A ─┐                                         ┌─ Handy B
- eigenes Google-Konto ── Drive API ── Mathub-Filme.json (geteilter Ordner) ── Drive API ── eigenes Google-Konto
+Handy A: Änderung → Banner „Jetzt teilen“ → whatsapp://send?phone=…&text=<Nachricht mit Link>
+Link:    https://mtahieu.github.io/mathub/#/teilen?d=<komprimierte Datensätze>
+Handy B: Link in WhatsApp antippen → Mathub öffnet sich → übernimmt automatisch → #/filme
 ```
-- Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an (OAuth-Token-Weiterleitung, Scope `drive`, ca. 1 h gültig, danach stille Neu-Anmeldung beim Öffnen der Filme). Die Client-ID legt der Besitzer einmal an; die anderen bekommen sie per Einladungslink (`#/filme?v=teilen&e=…`), nicht über das Repo.
-- Datei: `{app:'mathub-filme', schema, films:[…], shared:{…}, items:{rating:[…], gegessen:[…]}}`. Weitere geteilte item-Arten: in `EXTRA_SYNC_KINDS` (filme-store.js) eintragen – feste id, `items.put`, Löschen als `{deleted:true}`. **Alle Felder eines Films werden unverändert geteilt** – neue Film-Attribute brauchen keine Sync-Anpassung. Weitere geteilte Werte rund um Filme: Schlüssel in `SHARED_KV` (filme-store.js) eintragen.
-- Zusammenführen: pro Film gewinnt der neuere `updatedAt`; Löschen setzt `deleted:true` (bleibt als Markierung stehen); doppelte Katalogfilme werden zu einem. Beim Beitreten werden lokale Filme, die es in der Liste schon gibt, verworfen (Gesehen-Haken wird übernommen).
-- Abgleich: 1,5 s nach jeder Änderung, alle 30 s solange die App sichtbar ist (nur Metadaten, Download nur bei neuer Version), beim Zurückkehren in die App. Ohne Netz/Anmeldung wird gemerkt (`filme:sync:dirty`) und später nachgeholt.
-- Alle Film-Änderungen laufen über `filme-store.js` – nie direkt `items.put` auf `kind:'film'`, sonst fehlt der Abgleich-Auslöser bzw. der Zeitstempel. Neue Katalogfilme per Migration mit fester id `film:<catalogId>` und altem Zeitstempel (`addCatalogFilm` in db.js).
+- Kein Konto, kein Server. Der Link enthält die Datensätze (JSON, `deflate-raw`, Base64url; Präfix `z`, ohne Kompression `j`).
+- Inhalt: Film-Datensätze (inkl. `deleted`), weitere Arten aus `EXTRA_SYNC_KINDS` (Rezept-Bewertungen `rating`, `gegessen`) und Werte aus `SHARED_KV` („Heute Abend“). **Alle Felder werden unverändert übertragen** – neue Attribute brauchen keine Anpassung.
+- Standard: nur Datensätze mit `updatedAt` nach dem letzten Teilen (`teilen.lastSharedAt`); „Alles senden“ schickt alles.
+- Übernehmen: pro id gewinnt der neuere `updatedAt`; danach werden gleiche Filme mit unterschiedlicher id (gleicher Katalogfilm oder Titel) zusammengeführt. Übernommene Daten lösen kein neues Banner aus (`source: 'import'`).
+- Alle Änderungen an diesen Daten laufen über `filme-store.js`, `ratings.js`, `rezept-log.js` (setzen `updatedAt`, `updatedBy` = Profil-Name, Löschen als Markierung).
+- Eine Web-App kann nicht selbst in den WhatsApp-Download-Ordner schauen – deshalb Link statt Datei.
 
 ## Wikipedia-Abgleich neuer Filme
 
@@ -140,9 +142,9 @@ Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Ku
 
 `prefs.design = {preset, accent, shape, font}` (Einstellungen → Design). `core/theme.js` berechnet daraus für Hell bzw. Dunkel alle Farb-Variablen (Hintergrund leicht in Richtung des Schemas getönt, Akzent im hellen Modus abgedunkelt für Kontrast), `--rs` (Faktor für alle Rundungen) und `--font`. Neues Schema = Eintrag in `PRESETS`.
 
-## Rezeptfotos
+## Rezeptbilder
 
-`rezept-fotos.js`: pro Rezept ein englischer Suchbegriff (`SEARCH`). Die App sucht **einmal** auf Wikimedia Commons – zuerst unter „Quality images“, sonst allgemein (nur JPEG, ≥ 800 px, Querformat), notfalls das Titelbild eines Wikipedia-Artikels – und merkt sich den Treffer. „Gefällt mir nicht“ blendet das Foto auf diesem Gerät aus und zeigt die Icon-Illustration (keine neue Abfrage). Andere Quellen (Unsplash, Pexels u. a.) bräuchten einen persönlichen API-Schlüssel; Chefkoch & Co. haben keine offene Schnittstelle.
+`rezept-bild.js` zeichnet jedes Rezept als SVG aus seinen Zutaten (offline, ohne Netz): Gefäß nach Rezepttyp (Schüssel, Teller, Brett, Glas), Grundfarbe aus der Hauptzutat (`LOOK`: Farbe + Form je Zutat), Toppings als Röschen, Stücke, Scheiben, Blätter, Streusel, Soßen-Schwung; Anordnung mit festem Zufall pro Rezept-id. Neue Zutat → Eintrag in `LOOK`.
 
 ## Nur vegan
 
@@ -150,7 +152,7 @@ Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Ku
 
 ## Backup
 
-Seit 0.14 gibt es keine Backup-Funktion mehr – gesichert ist nur, was in der gemeinsamen Liste liegt. `exportAll`/`importAll` in db.js bleiben für Notfälle bestehen, sind aber nicht mehr in der App erreichbar.
+Seit 0.14 gibt es keine Backup-Funktion mehr – Filme und Rezept-Daten liegen durch das Teilen auch bei den anderen. `exportAll`/`importAll` in db.js bleiben für Notfälle bestehen, sind aber nicht mehr in der App erreichbar.
 
 ## Filmposter
 

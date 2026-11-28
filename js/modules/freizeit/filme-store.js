@@ -1,5 +1,5 @@
 // Filme – lokale Datenhaltung. Alle Zugriffe auf Film-Daten laufen hier durch, damit der Abgleich
-// mit der gemeinsamen Liste (filme-sync.js) jede Änderung mitbekommt.
+// beim Teilen per WhatsApp (teilen.js) jede Änderung mitbekommt.
 //
 // items kind 'film': vollständiger Datensatz, wird 1:1 geteilt – neue Felder sind automatisch dabei.
 //   Gelöschte Filme bleiben als {deleted: true} stehen, damit die Löschung bei allen ankommt.
@@ -9,6 +9,7 @@
 import { items, kv } from '../../core/db.js';
 import { emit } from '../../core/events.js';
 import { FILM_CATALOG } from './filme-data.js';
+import { getSettingsSync } from '../../core/settings.js';
 
 export const SHARED_KV = ['filme:heute'];
 
@@ -20,10 +21,8 @@ export const SHARED_KV = ['filme:heute'];
 export const EXTRA_SYNC_KINDS = ['rating', 'gegessen'];
 const SEED_TS = Date.parse('2026-11-17');   // Startliste – älter als jede spätere Änderung
 
-let whoAmI = '';
-/** Name, der bei Änderungen mitgespeichert wird (aus dem verknüpften Google-Konto). */
-export const setMe = (name) => { whoAmI = name || ''; };
-export const me = () => whoAmI;
+/** Name, der bei Änderungen mitgespeichert wird (Profil-Name aus den Einstellungen). */
+export const me = () => getSettingsSync().profile?.name || '';
 
 export const catalogItemId = (catalogId) => 'film:' + catalogId;
 
@@ -50,7 +49,7 @@ export const getFilm = (id) => items.get(id);
 /** Änderung speichern (setzt updatedAt neu und merkt, wer es war). */
 export async function saveFilm(rec) {
   const out = { ...rec, kind: 'film' };
-  if (whoAmI) out.updatedBy = whoAmI;
+  if (me()) out.updatedBy = me();
   return items.put(out);
 }
 
@@ -83,7 +82,7 @@ export async function getShared(key) {
 }
 
 export async function setShared(key, value, { source, record } = {}) {
-  const rec = record || { value, updatedAt: Date.now(), ...(whoAmI ? { updatedBy: whoAmI } : {}) };
+  const rec = record || { value, updatedAt: Date.now(), ...(me() ? { updatedBy: me() } : {}) };
   await kv.set(key, rec);
   emit('data:changed', { store: 'kv', type: key, source });
 }

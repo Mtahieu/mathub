@@ -448,6 +448,9 @@ details.measures[open] summary { margin-bottom: 10px; }
 .rimg-xs::after { display: none; }
 .rimg-xs .rimg-main { font-size: 24px; }
 .rimg-xs .rimg-side { display: none; }
+.rimg-drawn { background: none; }
+.rimg-drawn::after { display: none; }
+.rsvg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .rimg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; animation: photo-in .35s ease both; }
 .rimg.has-photo::after { display: none; }
 @keyframes photo-in { from { opacity: 0; } to { opacity: 1; } }
@@ -656,3 +659,15 @@ details.measures[open] summary { margin-bottom: 10px; }
 .eaten-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: calc(12px * var(--rs, 1)); background: var(--surface-2); }
 .meal-row.eaten .meal-name { color: var(--muted); }
 .meal-row.eaten .meal-slot { color: var(--accent); }
+
+/* ---------- Teilen-Banner ---------- */
+.share-banner {
+  position: fixed; left: 12px; right: 12px; bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px); z-index: 30;
+  display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 14px; max-width: 616px; margin: 0 auto;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: calc(16px * var(--rs, 1)); box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  transform: translateY(140%); opacity: 0; transition: transform .3s ease, opacity .3s ease; pointer-events: none;
+}
+.share-banner.show { transform: none; opacity: 1; pointer-events: auto; }
+.share-banner-text { flex: 1; font-size: .88rem; font-weight: 650; }
+body.share-open .toast { bottom: calc(var(--tabbar-h) + var(--safe-b) + 84px); }
