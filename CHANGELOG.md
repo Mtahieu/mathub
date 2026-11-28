@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.17.0 – 2026-11-28
+
+- **Kochen neu – wie die Filme:** Die Startseite zeigt alle veganen Rezepte als Liste mit Bild, Zeit, Kalorien und Protein. „Gegessen“ per Tipp (mit Rückgängig); schon gegessene Rezepte stehen eingeklappt unter „Schon gegessen“ – mit Anzahl, Datum und Sternen.
+- **Bewertungen wie bei Filmen:** Nach dem Essen erscheint im Rezept „Deine Bewertung“; mit Namen, wer bewertet hat.
+- **Personenzahl wählbar:** oben 1–6 Personen für alle Mengenangaben; im Rezept einzeln anpassbar, die Einkaufsliste übernimmt sie.
+- **Wochenplan entfernt** (inkl. Kantine, Bürotage, Intervallfasten, Kalorienziele). Die Einkaufsliste füllst du direkt aus Rezepten („Einkaufsliste“ im Rezept), mit Personen pro Rezept, Abhaken und Teilen.
+- **Filme:** „Schon gesehen“ ist jetzt ebenfalls eingeklappt; der Klapp-Zustand bleibt beim Neuzeichnen erhalten.
+- Einstellungen aufgeräumt (nur noch Design, Name, Erinnerungen, Daten). Mehr Platz unten, solange das Teilen-Banner sichtbar ist.
+- Alte Wochenpläne bleiben in der Datenbank, werden aber nicht mehr angezeigt. Keine Datenmigration nötig.
+
 ## 0.16.0 – 2026-11-28
 
 - **Neue Filme finden immer den richtigen Wikipedia-Eintrag:** Die App sucht gleichzeitig in Wikidata (deutsche & englische Titel inkl. Alternativtitel), in der deutschen und der englischen Wikipedia; Tippfehler werden über den Suchvorschlag korrigiert, eine Jahreszahl im Titel („Dune 2021“) hilft bei Remakes. Serien, Filmreihen und Bücher werden aussortiert.

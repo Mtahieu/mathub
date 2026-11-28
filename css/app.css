@@ -675,3 +675,26 @@ body.share-open .toast { bottom: calc(var(--tabbar-h) + var(--safe-b) + 84px); }
 .search-row .input { flex: 1; min-width: 0; }
 .pick-list .list-item { text-align: left; }
 button.banner { width: 100%; font: inherit; color: inherit; cursor: pointer; }
+
+/* ---------- Kochen wie Filme ---------- */
+.rimg-row { width: 64px; height: 52px; border-radius: calc(12px * var(--rs, 1)); flex: none; }
+.rimg-row::after { display: none; }
+.rimg-row .rimg-main { font-size: 26px; }
+.rimg-row .rimg-side { display: none; }
+.persons-row { display: flex; align-items: center; gap: 8px; }
+.persons-row .seg { flex: 1; }
+.badge-host { position: relative; }
+.count-badge {
+  position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+  background: var(--accent); color: var(--accent-ink); font-size: .7rem; font-weight: 800; display: grid; place-items: center;
+}
+details.collapse { gap: 0; }
+details.collapse > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; min-height: 28px; }
+details.collapse > summary::-webkit-details-marker { display: none; }
+details.collapse > summary .icon { color: var(--accent); flex: none; }
+details.collapse > summary::after { content: '▾'; margin-left: auto; color: var(--muted); transition: transform .2s; }
+details.collapse[open] > summary::after { transform: rotate(180deg); }
+details.collapse[open] > summary .collapse-hint { display: none; }
+details.collapse .collapse-hint { margin-left: auto; }
+details.collapse[open] > summary { margin-bottom: 8px; }
+body.share-open #view { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 110px); }

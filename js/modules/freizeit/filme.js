@@ -501,6 +501,7 @@ function tonightCard(f, ctx) {
 
 // ---------- Aktualisieren, wenn per Link etwas übernommen wurde ----------
 let current = null;
+let seenOpen = false;   // „Schon gesehen“ aufgeklappt? (bleibt beim Neuzeichnen erhalten)
 on('teilen:import', () => {
   if (current && parseHash().path === current.path) current.refresh();
 });
@@ -558,7 +559,9 @@ async function render(el, ctx) {
   if (open.length >= 2) el.append(bar.el);
 
   if (seen.length) {
-    el.append(card(`Schon gesehen (${seen.length})`, { iconName: 'check' }, h('div', { class: 'list' }, seen.map((f) => watchedRow(f, ctx)))));
+    el.append(h('details', { class: 'card collapse', open: seenOpen, ontoggle: (e) => { seenOpen = e.currentTarget.open; } },
+      h('summary', null, icon('check', 20), h('strong', null, `Schon gesehen (${seen.length})`), h('span', { class: 'collapse-hint small muted' }, 'antippen zum Aufklappen')),
+      h('div', { class: 'list' }, seen.map((f) => watchedRow(f, ctx)))));
   }
 
   // Hintergrund: offline hinzugefügte Filme mit Wikipedia abgleichen, gemeinsame Liste abgleichen

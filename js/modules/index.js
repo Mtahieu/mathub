@@ -16,5 +16,5 @@ import './hub/settings.js';
 import './freizeit/filme.js';
 import './freizeit/teilen.js';
 
-// Kochen (Rezepte, Wochenplan, Einkaufsliste)
-import './fitness/nutrition.js';
+// Kochen (vegane Rezepte, gegessen & bewertet, Einkaufsliste)
+import './fitness/kochen.js';

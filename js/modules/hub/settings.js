@@ -1,4 +1,4 @@
-// Einstellungen: Design, Profil, Kochen-Ziele (+ Richtwert-Rechner), Erinnerungen, Daten, Über.
+// Einstellungen: Design, Profil (Name), Erinnerungen, Daten, Über.
 
 import { registerModule } from '../../core/registry.js';
 import { entries, clearAll } from '../../core/db.js';
@@ -12,21 +12,6 @@ import { pushSupported, pushState, enablePush, disablePush, testNotification, RE
 import { APP_VERSION } from '../../version.js';
 import { PRESETS, SHAPES, FONTS, DEFAULT_DESIGN, designVars } from '../../core/theme.js';
 import { keyFromTs, formatDate } from '../../core/dates.js';
-
-const ACTIVITY = [
-  { value: 1.2, label: 'Überwiegend sitzend' },
-  { value: 1.375, label: 'Leicht aktiv (1–3× Sport/Woche)' },
-  { value: 1.55, label: 'Mäßig aktiv (3–5× Sport/Woche)' },
-  { value: 1.725, label: 'Sehr aktiv (6–7× Sport/Woche)' },
-];
-
-/** Gewicht fürs Profil – sonst der letzte Eintrag aus der früheren Körperwerte-Funktion. */
-async function latestWeight() {
-  const own = getSettingsSync().profile.weightKg;
-  if (own) return own;
-  const list = (await entries.byType('body')).filter((e) => e.data.weight != null).sort((a, b) => (a.date < b.date ? 1 : -1));
-  return list[0]?.data.weight ?? null;
-}
 
 // ---------- Design ----------
 function designCard() {
@@ -71,14 +56,6 @@ function designCard() {
   return card('Design', { iconName: 'star', cls: 'anchor-design' }, box);
 }
 
-/** Richtwert nach Mifflin-St Jeor; für Muskelaufbau +300 kcal, Protein 1,8 g/kg. */
-function suggest({ weight, heightCm, age, sex, activity }) {
-  if (!weight || !heightCm || !age || !sex) return null;
-  const bmr = 10 * weight + 6.25 * heightCm - 5 * age + (sex === 'm' ? 5 : -161);
-  const tdee = bmr * activity;
-  return { tdee, kcal: Math.round((tdee + 300) / 50) * 50, protein: Math.round((weight * 1.8) / 5) * 5 };
-}
-
 async function render(el, ctx) {
   const s = getSettingsSync();
   const saved = (msg = 'Gespeichert') => { toast(msg); ctx.refresh(); };
@@ -91,56 +68,11 @@ async function render(el, ctx) {
 
   // ----- Profil -----
   const name = textInput({ value: s.profile.name, placeholder: 'Wie soll ich dich nennen?', maxlength: 40 });
-  const weight = numInput({ value: s.profile.weightKg, placeholder: 'kg' });
-  const height = intInput({ value: s.profile.heightCm, placeholder: 'cm' });
-  const birth = intInput({ value: s.profile.birthYear, placeholder: 'z. B. 1995' });
-  const sex = select([{ value: '', label: '–' }, { value: 'm', label: 'männlich' }, { value: 'w', label: 'weiblich' }], s.profile.sex);
-  const activity = select(ACTIVITY, s.profile.activity);
   el.append(card('Profil', { iconName: 'home', cls: 'anchor-profil' },
-    field('Name', name),
-    h('div', { class: 'grid-2' }, field('Größe', withUnit(height, 'cm')), field('Geburtsjahr', birth)),
-    field('Gewicht (für den Kalorien-Richtwert)', withUnit(weight, 'kg')),
-    field('Geschlecht (für den Kalorien-Richtwert)', sex),
-    field('Aktivität im Alltag', activity),
+    field('Name', name, 'Für die Begrüßung und beim Teilen („Mathub von …“).'),
     h('button', {
       class: 'btn btn-primary',
-      onclick: async () => {
-        await updateSettings({ profile: { name: name.value.trim(), heightCm: readNum(height), birthYear: readNum(birth), sex: sex.value, activity: Number(activity.value), weightKg: readNum(weight) } });
-        saved();
-      },
-    }, 'Profil speichern')));
-
-  // ----- Ziele -----
-  const kcal = intInput({ value: s.targets.kcal, placeholder: 'kcal' });
-  const protein = intInput({ value: s.targets.protein, placeholder: 'g' });
-  const calcBox = h('div');
-  const calc = async () => {
-    const weight = await latestWeight();
-    const age = s.profile.birthYear ? new Date().getFullYear() - s.profile.birthYear : null;
-    const r = suggest({ weight, heightCm: s.profile.heightCm, age, sex: s.profile.sex, activity: s.profile.activity });
-    if (!r) {
-      calcBox.replaceChildren(h('p', { class: 'muted small' }, 'Für einen Vorschlag brauche ich Größe, Geburtsjahr, Geschlecht und Gewicht (Profil).'));
-      return;
-    }
-    calcBox.replaceChildren(h('div', { class: 'banner' }, icon('info'),
-      h('div', { style: { flex: 1 } },
-        h('div', null, h('strong', null, `${fmtInt(r.kcal)} kcal · ${r.protein} g Protein`)),
-        h('div', { class: 'small muted' }, `Erhaltungsbedarf ca. ${fmtInt(r.tdee)} kcal + 300 kcal für Muskelaufbau, 1,8 g Protein je kg (${fmt(weight)} kg). Grober Richtwert – passe ihn an deinen Verlauf an.`)),
-      h('button', { class: 'btn small', onclick: () => { kcal.value = r.kcal; protein.value = r.protein; toast('Übernommen – bitte speichern'); } }, 'Übernehmen')));
-  };
-  el.append(card('Kochen: Kalorien & Protein', { iconName: 'food', cls: 'anchor-ziele' },
-    h('div', { class: 'grid-2' },
-      field('Kalorien pro Tag', withUnit(kcal, 'kcal')),
-      field('Protein pro Tag', withUnit(protein, 'g'))),
-    h('button', { class: 'btn btn-ghost small', onclick: calc }, icon('info', 18), 'Richtwert für Kalorien & Protein berechnen'),
-    calcBox,
-    h('p', { class: 'muted small' }, 'Der Wochenplan beim Kochen nutzt diese Werte als Richtwert (kein Tracking).'),
-    h('button', {
-      class: 'btn btn-primary',
-      onclick: async () => {
-        await updateSettings({ targets: { kcal: readNum(kcal), protein: readNum(protein) } });
-        saved();
-      },
+      onclick: async () => { await updateSettings({ profile: { name: name.value.trim() } }); saved(); },
     }, 'Speichern')));
 
   // ----- Erinnerungen -----
@@ -189,7 +121,7 @@ async function reminderCard(ctx) {
     c.append(h('p', { class: 'muted small' }, 'Dieser Browser unterstützt keine Push-Benachrichtigungen. Öffne Mathub in Chrome und installiere die App.'));
     return c;
   }
-  const st = await pushState().catch(() => ({ status: 'off' }));
+  const st = await Promise.race([pushState(), new Promise((r) => setTimeout(() => r({ status: 'off' }), 2000))]).catch(() => ({ status: 'off' }));
   const test = (slot) => async () => {
     try { await testNotification(slot); toast('Test-Benachrichtigung gesendet'); } catch (err) { toast(err.message); }
   };

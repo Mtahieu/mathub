@@ -12,7 +12,6 @@ js/core/
   registry.js   Bereiche + Module, loadDays(), goalsForDay(), summarizeDay()
   router.js     Hash-Router (#/pfad?d=YYYY-MM-DD)
   ui.js         h()-Helfer, Icons, Sheets, Toasts, Formularfelder, Ring, Balken
-  charts.js     SVG-Linien-/Balkendiagramme (offline, ohne Bibliothek)
   settings.js   Einstellungen mit Defaults
   theme.js      Farbschemata (Vorschläge), eigene Akzentfarbe, Form, Schrift → CSS-Variablen
   dates.js      Datums-Helfer (lokale Tages-Schlüssel)
@@ -22,7 +21,7 @@ js/core/
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          home (Startseite mit Begrüßung & Spruch), home-quotes, settings (inkl. Design)
-  fitness/      Bereich „Kochen“ (Ordnername historisch): nutrition (Rezepte/Wochenplan/Einkauf),
+  fitness/      Bereich „Kochen“ (Ordnername historisch): kochen (Rezeptliste wie Filme, Einkaufsliste),
                 food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-bild (gezeichnete Rezeptbilder aus den Zutaten),
                 rezept-log (gegessen), ratings (Bewertungen) – gegessen & Bewertungen werden geteilt
   freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
@@ -52,7 +51,7 @@ Aktuelle Typen:
 | `sleep` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{hours, quality}` – Nacht *vor* dem Datum |
 | `job` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | **nicht mehr genutzt** seit 0.8.0 |
-| `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
+| `mealplan` (1/Woche) — **nicht mehr genutzt** seit 0.17.0 (Wochenplan entfernt) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
 | `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
 | `supplements` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{taken:{itemId: Zeitstempel}}` |
@@ -152,9 +151,9 @@ Handy B: Link in WhatsApp antippen → Mathub öffnet sich → übernimmt automa
 
 `rezept-bild.js` zeichnet jedes Rezept als SVG aus seinen Zutaten (offline, ohne Netz): Gefäß nach Rezepttyp (Schüssel, Teller, Brett, Glas), Grundfarbe aus der Hauptzutat (`LOOK`: Farbe + Form je Zutat), Toppings als Röschen, Stücke, Scheiben, Blätter, Streusel, Soßen-Schwung; Anordnung mit festem Zufall pro Rezept-id. Neue Zutat → Eintrag in `LOOK`.
 
-## Nur vegan
+## Kochen
 
-`food-data.js` enthält weiterhin alle Rezepte (alte Wochenpläne verweisen darauf), exportiert aber als `RECIPES` nur vegane. `veganizePlan()` ersetzt nicht-vegane Rezepte in der aktuellen und künftigen Wochen beim Öffnen (Reste bleiben stimmig).
+`kochen.js`: Liste aller veganen Rezepte wie die Filme – „Noch nicht gegessen“ und eingeklappt „Schon gegessen“ (mind. ein Eintrag in `gegessen`). Bewertung erscheint wie bei Filmen erst nach dem Essen. Personenzahl: `prefs.food.servings` (Startwert im Rezept, dort änderbar). Einkaufsliste: kv `kochen:einkauf` `{recipes:[{r, n}], checked}`. `food-data.js` enthält weiterhin alle Rezepte, exportiert als `RECIPES` nur vegane.
 
 ## Backup
 
