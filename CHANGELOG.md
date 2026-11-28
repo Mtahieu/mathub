@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0 – 2026-11-28
+
+- **Neue Filme finden immer den richtigen Wikipedia-Eintrag:** Die App sucht gleichzeitig in Wikidata (deutsche & englische Titel inkl. Alternativtitel), in der deutschen und der englischen Wikipedia; Tippfehler werden über den Suchvorschlag korrigiert, eine Jahreszahl im Titel („Dune 2021“) hilft bei Remakes. Serien, Filmreihen und Bücher werden aussortiert.
+- **Eindeutig → automatisch, sonst nachfragen:** Passt genau ein Film exakt, werden die Infos still übernommen. Sonst erscheint „Welcher Film ist gemeint?“ mit Postern, Jahr und Kurzbeschreibung zum Überprüfen – plus Suchfeld für Originaltitel oder andere Schreibweise und „Ohne Wikipedia“.
+- **Reichhaltigere Infos:** längere deutsche Beschreibung aus der Wikipedia, deutscher und Originaltitel, Jahr, Laufzeit, Regie, Besetzung, Land, Kategorien, Titelbild. Nach der Wahl heißt der Film wie im deutschen Wikipedia-Artikel.
+- Offline hinzugefügte Filme werden später abgeglichen; unklare Fälle zeigt ein Banner „Film zuordnen“. Im Bearbeiten-Dialog: „Mit Wikipedia abgleichen / anderen Treffer wählen“.
+
 ## 0.15.1 – 2026-11-28
 
 - **Neue Filme:** Sinners (2025, wieder dabei), Saw (2004, erster Teil), When Harry Met Sally… / Harry und Sally (1989), Whiplash (2014) und V/H/S (2012, erster Teil der Horror-Reihe) – mit Beschreibung, „Warum anschauen?“, Kategorien, Stimmung, Intensität und Titelbild über Wikipedia.

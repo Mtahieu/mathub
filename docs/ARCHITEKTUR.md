@@ -60,7 +60,7 @@ Aktuelle Typen:
 | item `rating` | `{key, stars, history:[{date, stars, by}], updatedBy, deleted?}` – key = Rezept; wird geteilt |
 | item `gegessen` | `{id:'gegessen:<datum>:<rezeptId>', recipeId, date, slot?, updatedBy, deleted?}` – wird geteilt |
 | kv `kochen:fotos2` / `kochen:fotoAus` | gemerkte Foto-Treffer je Rezept / ausgeblendete Fotos (nur Gerät) |
-| item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
+| item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?, wiki?, wikidata?, deTitle?, origTitle?, director?, cast?, country?, desc?, wikiCheckedAt?, wikiNeedsChoice?, deleted?}` |
 | kv `filme:poster` | gemerkte Wikipedia-Treffer `{<schlüssel>: {url, page, pageTitle, at}}` – Bilddateien im SW-Cache `posters-v1` |
 | kv `filme:heute` | `{value:{date, filmId}, updatedAt, updatedBy}` – Entscheidung für den Abend (geteilt); kv `filme:seeded` = Startliste angelegt |
 | kv `filme:sync` | gemeinsame Liste: `{clientId, fileId, fileName, account, me, version, lastSync, lastError, pending}`; `tmp:filme:token` nicht im Backup |
@@ -136,7 +136,13 @@ Handy B: Link in WhatsApp antippen → Mathub öffnet sich → übernimmt automa
 
 ## Wikipedia-Abgleich neuer Filme
 
-Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Kurzbeschreibung muss „film“ enthalten), holt über Wikidata Jahr, Laufzeit, Regie, Besetzung, Land, Genres (→ Mathub-Kategorien) und den deutschen Artikel, daraus die Beschreibung. Stimmung/Intensität werden aus den Kategorien abgeleitet. Nur leere Felder werden gefüllt; „Mit Wikipedia abgleichen“ im Bearbeiten-Dialog ersetzt die Wikipedia-Felder. Offline hinzugefügte Filme werden beim nächsten Öffnen nachgeholt.
+`filme-wiki.js` findet Filme auch, wenn der Titel nicht 1:1 passt:
+1. **Kandidaten** (`findCandidates`): parallel Wikidata-Suche (de + en, inkl. Alternativtitel) sowie Volltextsuche in der deutschen und englischen Wikipedia; bei 0 Treffern der Tippfehler-Vorschlag von Wikipedia. Jahreszahl im Titel („Dune 2021“) wird erkannt.
+2. **Nur Filme**: Wikidata „ist ein“ (P31) Film/Animationsfilm/Fernsehfilm …; Serien, Filmreihen, Bücher fliegen raus.
+3. **Rangfolge**: exakter Titel (de/en/Alternativtitel, ohne Artikel/Sonderzeichen) > Titelanfang > Suchrang; passende Jahreszahl +, falsche −.
+4. **Entscheidung** (`lookupFilm`): genau ein exakter Treffer → still übernehmen; sonst Auswahl „Welcher Film ist gemeint?“ mit Postern, Jahr, Kurzbeschreibung und eigenem Suchfeld; „Ohne Wikipedia“ möglich. Im Hintergrund (offline hinzugefügt) wird ein unsicherer Fall als `wikiNeedsChoice` markiert → Banner „Film zuordnen“.
+5. **Infos** (`infoFor`): deutsche Wikipedia-Einleitung (6 Sätze, sonst englisch), deutscher & Originaltitel, Jahr, Laufzeit, Regie, Besetzung, Land, Kategorien; Poster über den englischen Artikel (`wiki`). Nach der Wahl heißt der Film wie im deutschen Wikipedia-Artikel.
+„Mit Wikipedia abgleichen / anderen Treffer wählen“ im Bearbeiten-Dialog öffnet immer die Auswahl.
 
 ## Design
 

@@ -17,7 +17,7 @@ import { today, formatDate } from '../../core/dates.js';
 import { MOODS, INTENSITY, GENRES, catalogFilm } from './filme-data.js';
 import { findPoster, forgetPoster } from './filme-poster.js';
 import { seedOnce, allFilms, getFilm, saveFilm, patchFilm, deleteFilm, getShared, setShared } from './filme-store.js';
-import { lookupFilm, applyLookup } from './filme-wiki.js';
+import { lookupFilm, findCandidates, candidateThumbs, infoFor, applyLookup, WIKI_FIELDS } from './filme-wiki.js';
 
 const selected = new Set();   // Auswahl für die Entscheidung (bleibt beim Neuzeichnen erhalten)
 
@@ -57,29 +57,122 @@ async function setWatched(f, watched) {
 // ---------- Wikipedia-Abgleich ----------
 const enriching = new Set();
 const triedThisSession = new Set();   // automatischer Abgleich: höchstens ein Versuch pro Film und App-Start
-/** Infos von Wikipedia holen und am Film speichern (wird geteilt). overwrite: Wikipedia-Felder ersetzen. */
-async function enrich(id, { overwrite = false, quiet = true } = {}) {
-  if (enriching.has(id) || navigator.onLine === false) return false;
+
+/** Gewählten Treffer übernehmen: Wikipedia-Felder ersetzen, offizieller (deutscher) Titel. */
+async function applyCandidate(id, cand) {
+  const info = await infoFor(cand);
+  const fresh = await getFilm(id);
+  if (!fresh) return null;
+  await forgetPoster(fresh);
+  const rec = applyLookup(fresh, info, { overwrite: true });
+  rec.title = cand.deTitle || cand.title || fresh.title;
+  return saveFilm(rec);
+}
+
+/**
+ * Infos von Wikipedia holen und am Film speichern (wird geteilt).
+ * mode 'auto': sicherer Treffer wird übernommen, sonst als „Zuordnung nötig“ markiert (Hintergrund).
+ * mode 'ask':  sicherer Treffer wird übernommen, sonst sofort Auswahl anzeigen (gerade hinzugefügt).
+ * mode 'pick': immer Auswahl anzeigen (Knopf „Mit Wikipedia abgleichen“).
+ */
+async function enrich(id, { mode = 'auto', ctx } = {}) {
+  if (enriching.has(id)) return false;
+  if (navigator.onLine === false) { if (mode !== 'auto') toast('Ohne Internet – Abgleich folgt später'); return false; }
   enriching.add(id);
   try {
     const it = await getFilm(id);
     if (!it || it.deleted) return false;
-    const info = await lookupFilm(it.title);
-    const fresh = await getFilm(id);   // inzwischen geändert?
-    await saveFilm(applyLookup(fresh, info, { overwrite }));
-    if (!quiet) toast(info ? `Infos zu „${it.title}“ von Wikipedia übernommen` : `Zu „${it.title}“ nichts auf Wikipedia gefunden`);
-    return true;
+    const res = await lookupFilm(it.title);
+    if (res.status === 'sure' && mode !== 'pick') {
+      await applyCandidate(id, res.candidate);
+      if (mode === 'ask') toast(`Infos zu „${res.candidate.title}“ übernommen`);
+      return true;
+    }
+    if (mode === 'auto') {
+      await saveFilm({ ...(await getFilm(id)), wikiNeedsChoice: true });
+      return true;
+    }
+    openWikiPicker(id, ctx, res.candidates);
+    return false;
   } catch {
-    if (!quiet) toast('Wikipedia gerade nicht erreichbar');
+    if (mode !== 'auto') toast('Wikipedia gerade nicht erreichbar');
     return false;
   } finally {
     enriching.delete(id);
   }
 }
 
+/** Auswahl „Welcher Film ist gemeint?“ – mit Postern zum Überprüfen und eigener Suche. */
+async function openWikiPicker(id, ctx, initial) {
+  const film = await getFilm(id);
+  if (!film) return;
+  document.querySelectorAll('.toast').forEach((t) => t.remove());   // „suche …“-Hinweis würde die Auswahl verdecken
+  const list = h('div', { class: 'list pick-list' });
+  const q = textInput({ value: film.title, placeholder: 'Titel, Originaltitel oder „Titel 2021“' });
+  const after = () => ctx?.refresh();
+  const show = (cands) => {
+    if (!cands.length) {
+      list.replaceChildren(h('p', { class: 'small muted' }, 'Nichts gefunden. Versuch den Originaltitel, eine andere Schreibweise oder eine Jahreszahl (z. B. „Dune 2021“).'));
+      return;
+    }
+    const thumbs = new Map();
+    list.replaceChildren(...cands.map((c) => {
+      const th = h('span', { class: 'poster poster-sm', style: `--hue: ${(c.year || 0) % 360}` }, '🎬');
+      thumbs.set(c.enwiki, th);
+      return h('button', {
+        class: 'list-item',
+        onclick: async () => {
+          sheet.close();
+          toast('Übernehme Infos …');
+          try {
+            const saved = await applyCandidate(id, c);
+            toast(`„${saved.title}“ – Infos von Wikipedia übernommen`);
+          } catch { toast('Wikipedia gerade nicht erreichbar'); }
+          after();
+        },
+      }, th, h('span', { class: 'list-main' },
+        h('span', { class: 'list-title' }, c.title, c.year ? ` (${c.year})` : ''),
+        c.enTitle && normalizeTitle(c.enTitle) !== normalizeTitle(c.title) ? h('span', { class: 'list-sub' }, `Original: ${c.enTitle}`) : null,
+        c.description ? h('span', { class: 'list-sub' }, c.description) : null), icon('chevR', 18));
+    }));
+    candidateThumbs(cands).then((map) => {
+      for (const [t, url] of Object.entries(map)) {
+        const el = thumbs.get(t);
+        if (!el) continue;
+        const img = new Image(); img.alt = ''; img.onload = () => { el.classList.add('has-img'); el.replaceChildren(img); }; img.src = url;
+      }
+    }).catch(() => {});
+  };
+  const search = async () => {
+    list.replaceChildren(h('p', { class: 'small muted' }, 'Suche …'));
+    try { show(await findCandidates(q.value.trim() || film.title)); } catch { list.replaceChildren(h('p', { class: 'small muted' }, 'Wikipedia gerade nicht erreichbar.')); }
+  };
+  q.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+  const sheet = openSheet({
+    title: 'Welcher Film ist gemeint?',
+    body: [
+      h('p', { class: 'small muted' }, `Bitte den passenden Treffer zu „${film.title}“ antippen – dann übernimmt Mathub Beschreibung, Jahr, Laufzeit, Regie, Besetzung, Kategorien und Titelbild.`),
+      h('div', { class: 'search-row' }, q, h('button', { type: 'button', class: 'btn small', onclick: search }, icon('search', 16), ' Suchen')),
+      list,
+    ],
+    footer: [
+      h('button', { class: 'btn', onclick: async () => {
+        const fresh = await getFilm(id);
+        const rec = { ...fresh, wikiCheckedAt: Date.now(), wikiMiss: true };
+        delete rec.wikiNeedsChoice;
+        await saveFilm(rec);
+        sheet.close(); after();
+      } }, 'Ohne Wikipedia'),
+      h('button', { class: 'btn', onclick: () => sheet.close() }, 'Später'),
+    ],
+  });
+  if (initial) show(initial); else search();
+}
+const normalizeTitle = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '');
+
 /** Eigene Filme, die noch nie abgeglichen wurden (z. B. offline hinzugefügt), nachholen. */
 async function enrichPending(films, after) {
-  const todo = films.filter((f) => !f.catalogId && !f.wikiCheckedAt && !triedThisSession.has(f.id)).slice(0, 3);
+  const todo = films.filter((f) => !f.catalogId && !f.wikiCheckedAt && !f.wikiNeedsChoice && !triedThisSession.has(f.id)).slice(0, 3);
   let changed = false;
   for (const f of todo) {
     triedThisSession.add(f.id);
@@ -242,15 +335,11 @@ function openEditor(f, ctx) {
       field('Stimmung', moodChips),
       field('Intensität', segmented(Object.entries(INTENSITY).map(([v, l]) => ({ value: v, label: l })), intensity, (v) => { intensity = v; intensityTouched = true; })),
       field('Notiz', note),
-      f ? h('button', {
+      f && !f.catalogId ? h('button', {
         type: 'button', class: 'btn small',
-        onclick: async () => {
-          sheet.close();
-          toast('Suche auf Wikipedia …');
-          await enrich(f.id, { overwrite: true, quiet: false });
-          ctx.refresh();
-        },
-      }, icon('refresh', 16), ' Mit Wikipedia abgleichen') : h('p', { class: 'small muted' }, 'Jahr, Laufzeit, Regie, Besetzung, Kategorien, Beschreibung und Titelbild holt Mathub automatisch von Wikipedia.'),
+        onclick: async () => { sheet.close(); toast('Suche auf Wikipedia …'); await enrich(f.id, { mode: 'pick', ctx }); },
+      }, icon('search', 16), ' Mit Wikipedia abgleichen / anderen Treffer wählen')
+        : !f ? h('p', { class: 'small muted' }, 'Beschreibung, Jahr, Laufzeit, Regie, Besetzung, Kategorien und Titelbild holt Mathub von Wikipedia – auch wenn der Titel nicht genau passt (dann darfst du den richtigen Treffer wählen).') : null,
     ],
     footer: [
       f ? h('button', {
@@ -273,7 +362,7 @@ function openEditor(f, ctx) {
           const base = { ...(existing || { kind: 'film', watched: false }) };
           if (renamed) {   // anderer Film → Wikipedia-Infos neu holen
             await forgetPoster(existing);
-            for (const k of ['wiki', 'deTitle', 'desc', 'descLang', 'year', 'director', 'cast', 'country', 'wikiCheckedAt', 'wikiMiss']) delete base[k];
+            for (const k of [...WIKI_FIELDS, 'wikiCheckedAt', 'wikiMiss', 'wikiNeedsChoice']) delete base[k];
           }
           const saved = await saveFilm({
             ...base,
@@ -283,7 +372,7 @@ function openEditor(f, ctx) {
           sheet.close();
           toast(f ? 'Gespeichert' : `„${t}“ hinzugefügt – suche Infos auf Wikipedia …`);
           ctx.refresh();
-          if (!saved.catalogId && (!f || renamed)) enrich(saved.id).then((ok) => { if (ok) ctx.refresh(); });
+          if (!saved.catalogId && (!f || renamed)) enrich(saved.id, { mode: 'ask', ctx }).then((ok) => { if (ok) ctx.refresh(); });
         },
       }, f ? 'Speichern' : 'Hinzufügen'),
     ],
@@ -430,6 +519,16 @@ async function render(el, ctx) {
       h('button', { class: 'icon-btn', 'aria-label': 'Film hinzufügen', onclick: () => openEditor(null, ctx) }, icon('plus')),
     ],
   }));
+
+  const unsure = films.filter((f) => f.wikiNeedsChoice && !f.catalogId);
+  if (unsure.length) {
+    el.append(h('button', { class: 'banner', onclick: () => enrich(unsure[0].id, { mode: 'pick', ctx }) },
+      icon('search'),
+      h('div', { style: { flex: 1, textAlign: 'left' } },
+        h('strong', null, unsure.length === 1 ? `„${unsure[0].title}“ zuordnen` : `${unsure.length} Filme zuordnen`),
+        h('div', { class: 'small muted' }, 'Nicht eindeutig auf Wikipedia – kurz den richtigen Treffer wählen, dann gibt’s Beschreibung & Bild.')),
+      icon('chevR', 18)));
+  }
 
   const tonight = await tonightPick(films);
   if (tonight) el.append(tonightCard(tonight, ctx));

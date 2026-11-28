@@ -671,3 +671,7 @@ details.measures[open] summary { margin-bottom: 10px; }
 .share-banner.show { transform: none; opacity: 1; pointer-events: auto; }
 .share-banner-text { flex: 1; font-size: .88rem; font-weight: 650; }
 body.share-open .toast { bottom: calc(var(--tabbar-h) + var(--safe-b) + 84px); }
+.search-row { display: flex; gap: 8px; align-items: center; }
+.search-row .input { flex: 1; min-width: 0; }
+.pick-list .list-item { text-align: left; }
+button.banner { width: 100%; font: inherit; color: inherit; cursor: pointer; }
