@@ -26,7 +26,8 @@ js/modules/
   fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
                 sleep, body, supplements, supplement-data, ratings (Bewertungen)
   job/          checkin (täglicher Job-Check-in)
-  freizeit/     filme (Merkliste & Entscheidungshilfe), filme-data (Startliste & Infos), filme-poster (Titelbilder)
+  freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), filme-sync (gemeinsame Liste
+                über Google Drive), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
 ```
@@ -60,7 +61,8 @@ Aktuelle Typen:
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
 | item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
 | kv `filme:poster` | gemerkte Wikipedia-Treffer `{<schlüssel>: {url, page, pageTitle, at}}` – Bilddateien im SW-Cache `posters-v1` |
-| kv `filme:heute` | `{date, filmId}` – Entscheidung für den Abend; kv `filme:seeded` = Startliste angelegt |
+| kv `filme:heute` | `{value:{date, filmId}, updatedAt, updatedBy}` – Entscheidung für den Abend (geteilt); kv `filme:seeded` = Startliste angelegt |
+| kv `filme:sync` | gemeinsame Liste: `{clientId, fileId, fileName, account, me, version, lastSync, lastError, pending}`; `tmp:filme:token` nicht im Backup |
 | kv `gcal`, `gcal:events` | **nicht mehr genutzt** seit 0.10.0 (Google Kalender entfernt; Altdaten bleiben liegen) |
 | kv `tmp:…` | kurzlebig, **nicht im Backup** (z. B. Anmelde-Token) |
 | kv `push` | Push-Abo + lokal erzeugter VAPID-Schlüssel (verlässt das Gerät nur als GitHub-Secret) |
@@ -116,6 +118,22 @@ GitHub Actions (cron, UTC) ──leeres Signal (VAPID)──▶ Push-Dienst ─�
 - Secret `PUSH_CONFIG` = Code aus der App (Einstellungen → Erinnerungen). Mehrere Geräte: JSON-Array.
 - Abo abgelaufen → Workflow schlägt fehl (GitHub schickt eine Mail) → in der App neu einrichten.
 - GitHub pausiert Zeitpläne in Repos ohne Commits nach 60 Tagen – dann im Actions-Tab wieder aktivieren.
+
+## Gemeinsame Filmliste (Google Drive)
+
+```
+Handy A ─┐                                         ┌─ Handy B
+ eigenes Google-Konto ── Drive API ── Mathub-Filme.json (geteilter Ordner) ── Drive API ── eigenes Google-Konto
+```
+- Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an (OAuth-Token-Weiterleitung, Scope `drive`, ca. 1 h gültig, danach stille Neu-Anmeldung beim Öffnen der Filme). Die Client-ID legt der Besitzer einmal an; die anderen bekommen sie per Einladungslink (`#/filme?v=teilen&e=…`), nicht über das Repo.
+- Datei: `{app:'mathub-filme', schema, films:[…], shared:{…}}`. **Alle Felder eines Films werden unverändert geteilt** – neue Film-Attribute brauchen keine Sync-Anpassung. Weitere geteilte Werte rund um Filme: Schlüssel in `SHARED_KV` (filme-store.js) eintragen.
+- Zusammenführen: pro Film gewinnt der neuere `updatedAt`; Löschen setzt `deleted:true` (bleibt als Markierung stehen); doppelte Katalogfilme werden zu einem. Beim Beitreten werden lokale Filme, die es in der Liste schon gibt, verworfen (Gesehen-Haken wird übernommen).
+- Abgleich: 1,5 s nach jeder Änderung, alle 30 s solange die App sichtbar ist (nur Metadaten, Download nur bei neuer Version), beim Zurückkehren in die App. Ohne Netz/Anmeldung wird gemerkt (`filme:sync:dirty`) und später nachgeholt.
+- Alle Film-Änderungen laufen über `filme-store.js` – nie direkt `items.put` auf `kind:'film'`, sonst fehlt der Abgleich-Auslöser bzw. der Zeitstempel. Neue Katalogfilme per Migration mit fester id `film:<catalogId>` und altem Zeitstempel (`addCatalogFilm` in db.js).
+
+## Wikipedia-Abgleich neuer Filme
+
+Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Kurzbeschreibung muss „film“ enthalten), holt über Wikidata Jahr, Laufzeit, Regie, Besetzung, Land, Genres (→ Mathub-Kategorien) und den deutschen Artikel, daraus die Beschreibung. Stimmung/Intensität werden aus den Kategorien abgeleitet. Nur leere Felder werden gefüllt; „Mit Wikipedia abgleichen“ im Bearbeiten-Dialog ersetzt die Wikipedia-Felder. Offline hinzugefügte Filme werden beim nächsten Öffnen nachgeholt.
 
 ## Filmposter
 

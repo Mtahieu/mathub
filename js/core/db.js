@@ -122,7 +122,27 @@ export const items = {
     await withStore('items', 'readwrite', (s) => wrap(s.delete(id)));
     emit('data:changed', { store: 'items' });
   },
+  /**
+   * Speichert einen Datensatz unverändert – ohne Zeitstempel neu zu setzen (für Abgleich/Sync).
+   * source landet im Event, damit z. B. der Sync eigene Schreibvorgänge erkennt.
+   */
+  async putRaw(rec, { source } = {}) {
+    if (!rec?.kind || !rec.id) throw new Error('putRaw braucht kind und id');
+    await withStore('items', 'readwrite', (s) => wrap(s.put(rec)));
+    emit('data:changed', { store: 'items', kind: rec.kind, source });
+    return rec;
+  },
 };
+
+/**
+ * Katalogfilm per Migration ergänzen: feste id 'film:<catalogId>' und fester, alter Zeitstempel –
+ * so entsteht auf allen Geräten derselbe Datensatz, und eine spätere Löschung in der gemeinsamen
+ * Liste (neuerer Zeitstempel) gewinnt beim Abgleich.
+ */
+async function addCatalogFilm(rec, sinceIso) {
+  const ts = Date.parse(sinceIso);
+  await items.putRaw({ ...rec, id: 'film:' + rec.catalogId, kind: 'film', watched: false, createdAt: ts, updatedAt: ts });
+}
 
 // ---------- kv ----------
 export const kv = {
@@ -160,10 +180,10 @@ const MIGRATIONS = [
       const tonight = await kv.get('filme:heute', null);
       if (tonight && removed.some((f) => f.id === tonight.filmId)) await kv.set('filme:heute', null);
       if (!films.some((f) => f.catalogId === 'watchmen' || /^\s*watchmen\s*$/i.test(f.title || ''))) {
-        await items.put({
-          kind: 'film', catalogId: 'watchmen', title: 'Watchmen', year: 2009, runtime: 162,
-          moods: ['spannung', 'nachdenken'], intensity: 3, emoji: '🕰️', watched: false,
-        });
+        await addCatalogFilm({
+          catalogId: 'watchmen', title: 'Watchmen', year: 2009, runtime: 162,
+          moods: ['spannung', 'nachdenken'], intensity: 3, emoji: '🕰️',
+        }, '2026-11-23');
       }
     },
   },
@@ -174,10 +194,10 @@ const MIGRATIONS = [
       if (!(await kv.get('filme:seeded', false))) return;
       const films = await items.all('film');
       if (films.some((f) => f.catalogId === 'puss-in-boots-last-wish' || /puss in boots|gestiefelte kater/i.test(f.title || ''))) return;
-      await items.put({
-        kind: 'film', catalogId: 'puss-in-boots-last-wish', title: 'Puss in Boots: The Last Wish', year: 2022, runtime: 102,
-        genres: ['animation', 'abenteuer', 'komoedie', 'fantasy', 'familie'], moods: ['lachen', 'spannung'], intensity: 1, emoji: '🐈', watched: false,
-      });
+      await addCatalogFilm({
+        catalogId: 'puss-in-boots-last-wish', title: 'Puss in Boots: The Last Wish', year: 2022, runtime: 102,
+        genres: ['animation', 'abenteuer', 'komoedie', 'fantasy', 'familie'], moods: ['lachen', 'spannung'], intensity: 1, emoji: '🐈',
+      }, '2026-11-25');
     },
   },
   {
@@ -187,10 +207,10 @@ const MIGRATIONS = [
       if (!(await kv.get('filme:seeded', false))) return;
       const films = await items.all('film');
       if (films.some((f) => f.catalogId === 'smile-2' || /^\s*smile\s*2\s*$/i.test(f.title || ''))) return;
-      await items.put({
-        kind: 'film', catalogId: 'smile-2', title: 'Smile 2', year: 2024, runtime: 127,
-        genres: ['horror', 'thriller'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '😁', watched: false,
-      });
+      await addCatalogFilm({
+        catalogId: 'smile-2', title: 'Smile 2', year: 2024, runtime: 127,
+        genres: ['horror', 'thriller'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '😁',
+      }, '2026-11-28');
     },
   },
 ];

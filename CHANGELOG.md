@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0 – 2026-11-28
+
+- **Gemeinsame Filmliste über Google Drive:** Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an; die Liste liegt als Datei in einem geteilten Drive-Ordner. Neue Filme, Gesehen-Haken, Bewertungen, Notizen, Löschungen und „Heute Abend“ sind nach wenigen Sekunden bei allen. Einrichtung unter Filme → ☁️: einmalig Client-ID anlegen, Liste erstellen, Einladungslink teilen – die anderen öffnen nur den Link.
+- Beim Beitreten werden vorhandene Filme übernommen, ohne doppelt zu erscheinen. Ohne Netz geht nichts verloren – Änderungen werden später abgeglichen. Neue Film-Eigenschaften künftiger Versionen werden automatisch mitgeteilt.
+- **Neue Filme werden automatisch mit Wikipedia abgeglichen:** Jahr, Laufzeit, Regie, Besetzung, Land, Kategorien, deutsche Beschreibung, Titelbild; Stimmung und Intensität werden vorgeschlagen. Knopf „Mit Wikipedia abgleichen“ im Bearbeiten-Dialog.
+- In den Film-Details steht, wer zuletzt etwas geändert hat.
+- Intern: Löschen von Filmen als Markierung, feste IDs für Katalogfilme (keine Dopplungen über Geräte hinweg), Zeitstempel für „Heute Abend“. Keine Datenmigration nötig.
+
 ## 0.11.1 – 2026-11-28
 
 - **Filme: „Smile 2“** (2024, Parker Finn) aufgenommen – Horror/Thriller, Stimmung Gruseln & Spannung, Intensität „heftig“, mit Beschreibung und Titelbild von Wikipedia.

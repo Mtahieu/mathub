@@ -597,3 +597,13 @@ details.measures[open] summary { margin-bottom: 10px; }
 @keyframes pop { 0% { transform: scale(.85); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
 .card.tonight { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .tonight-title { font-size: 1.15rem; }
+
+/* ---------- Filme: gemeinsame Liste ---------- */
+.sync-pill {
+  display: flex; align-items: center; gap: 8px; align-self: flex-start; text-decoration: none;
+  font-size: .82rem; font-weight: 650; color: var(--accent); background: var(--accent-soft);
+  padding: 6px 12px; border-radius: 99px;
+}
+.sync-pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.copy-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.copy-row code { flex: 1; min-width: 0; word-break: break-all; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; background: var(--surface-2); padding: 6px 8px; border-radius: 8px; }
