@@ -16,7 +16,6 @@ js/core/
   settings.js   Einstellungen mit Defaults
   theme.js      Farbschemata (Vorschläge), eigene Akzentfarbe, Form, Schrift → CSS-Variablen
   dates.js      Datums-Helfer (lokale Tages-Schlüssel)
-  backup.js     Backup-Datei erstellen/teilen/einlesen
   update.js     Service-Worker-Registrierung + Update-Banner
   push.js       Push einrichten (VAPID-Schlüssel lokal erzeugen, Abo, Code für GitHub-Secret)
   reminders.js  Text der Erinnerungen aus reminderNote() der Module, sonst ein Spruch (läuft im Service Worker)
@@ -24,7 +23,8 @@ js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
   hub/          home (Startseite mit Begrüßung & Spruch), home-quotes, settings (inkl. Design)
   fitness/      Bereich „Kochen“ (Ordnername historisch): nutrition (Rezepte/Wochenplan/Einkauf),
-                food-data (Zutaten & Rezepte), rezept-fotos (echte Fotos über Wikipedia), ratings (Bewertungen)
+                food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-fotos (Fotos über Wikimedia Commons),
+                rezept-log (gegessen), ratings (Bewertungen) – gegessen & Bewertungen werden geteilt
   freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), filme-sync (gemeinsame Liste
                 über Google Drive), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
@@ -57,7 +57,9 @@ Aktuelle Typen:
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
 | `supplements` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{taken:{itemId: Zeitstempel}}` |
 | item `supplement` — **nicht mehr genutzt** seit 0.13.0 | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
-| item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
+| item `rating` | `{key, stars, history:[{date, stars, by}], updatedBy, deleted?}` – key = Rezept; wird geteilt |
+| item `gegessen` | `{id:'gegessen:<datum>:<rezeptId>', recipeId, date, slot?, updatedBy, deleted?}` – wird geteilt |
+| kv `kochen:fotos2` / `kochen:fotoAus` | gemerkte Foto-Treffer je Rezept / ausgeblendete Fotos (nur Gerät) |
 | item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
 | kv `filme:poster` | gemerkte Wikipedia-Treffer `{<schlüssel>: {url, page, pageTitle, at}}` – Bilddateien im SW-Cache `posters-v1` |
 | kv `filme:heute` | `{value:{date, filmId}, updatedAt, updatedBy}` – Entscheidung für den Abend (geteilt); kv `filme:seeded` = Startliste angelegt |
@@ -125,7 +127,7 @@ Handy A ─┐                                         ┌─ Handy B
  eigenes Google-Konto ── Drive API ── Mathub-Filme.json (geteilter Ordner) ── Drive API ── eigenes Google-Konto
 ```
 - Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an (OAuth-Token-Weiterleitung, Scope `drive`, ca. 1 h gültig, danach stille Neu-Anmeldung beim Öffnen der Filme). Die Client-ID legt der Besitzer einmal an; die anderen bekommen sie per Einladungslink (`#/filme?v=teilen&e=…`), nicht über das Repo.
-- Datei: `{app:'mathub-filme', schema, films:[…], shared:{…}}`. **Alle Felder eines Films werden unverändert geteilt** – neue Film-Attribute brauchen keine Sync-Anpassung. Weitere geteilte Werte rund um Filme: Schlüssel in `SHARED_KV` (filme-store.js) eintragen.
+- Datei: `{app:'mathub-filme', schema, films:[…], shared:{…}, items:{rating:[…], gegessen:[…]}}`. Weitere geteilte item-Arten: in `EXTRA_SYNC_KINDS` (filme-store.js) eintragen – feste id, `items.put`, Löschen als `{deleted:true}`. **Alle Felder eines Films werden unverändert geteilt** – neue Film-Attribute brauchen keine Sync-Anpassung. Weitere geteilte Werte rund um Filme: Schlüssel in `SHARED_KV` (filme-store.js) eintragen.
 - Zusammenführen: pro Film gewinnt der neuere `updatedAt`; Löschen setzt `deleted:true` (bleibt als Markierung stehen); doppelte Katalogfilme werden zu einem. Beim Beitreten werden lokale Filme, die es in der Liste schon gibt, verworfen (Gesehen-Haken wird übernommen).
 - Abgleich: 1,5 s nach jeder Änderung, alle 30 s solange die App sichtbar ist (nur Metadaten, Download nur bei neuer Version), beim Zurückkehren in die App. Ohne Netz/Anmeldung wird gemerkt (`filme:sync:dirty`) und später nachgeholt.
 - Alle Film-Änderungen laufen über `filme-store.js` – nie direkt `items.put` auf `kind:'film'`, sonst fehlt der Abgleich-Auslöser bzw. der Zeitstempel. Neue Katalogfilme per Migration mit fester id `film:<catalogId>` und altem Zeitstempel (`addCatalogFilm` in db.js).
@@ -140,7 +142,15 @@ Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Ku
 
 ## Rezeptfotos
 
-`rezept-fotos.js` ordnet jedem Rezept einen Wikipedia-Artikel des Gerichts zu (`PHOTO_TITLES`, „de:“ = deutsche Wikipedia) und lädt die Titelbilder gebündelt (bis 45 Titel pro Abfrage, nur frei lizenzierte Bilder: `pilicense=free`). Es sind Symbolfotos des Gerichts; die Quelle steht im Rezept. Chefkoch & Co. sind nicht möglich (keine offene Schnittstelle, Browser-Abrufe gesperrt, Bildrechte). Neues Rezept → Eintrag in `PHOTO_TITLES`.
+`rezept-fotos.js`: pro Rezept ein englischer Suchbegriff (`SEARCH`). Die App sucht **einmal** auf Wikimedia Commons – zuerst unter „Quality images“, sonst allgemein (nur JPEG, ≥ 800 px, Querformat), notfalls das Titelbild eines Wikipedia-Artikels – und merkt sich den Treffer. „Gefällt mir nicht“ blendet das Foto auf diesem Gerät aus und zeigt die Icon-Illustration (keine neue Abfrage). Andere Quellen (Unsplash, Pexels u. a.) bräuchten einen persönlichen API-Schlüssel; Chefkoch & Co. haben keine offene Schnittstelle.
+
+## Nur vegan
+
+`food-data.js` enthält weiterhin alle Rezepte (alte Wochenpläne verweisen darauf), exportiert aber als `RECIPES` nur vegane. `veganizePlan()` ersetzt nicht-vegane Rezepte in der aktuellen und künftigen Wochen beim Öffnen (Reste bleiben stimmig).
+
+## Backup
+
+Seit 0.14 gibt es keine Backup-Funktion mehr – gesichert ist nur, was in der gemeinsamen Liste liegt. `exportAll`/`importAll` in db.js bleiben für Notfälle bestehen, sind aber nicht mehr in der App erreichbar.
 
 ## Filmposter
 

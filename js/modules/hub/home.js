@@ -4,7 +4,6 @@ import { registerModule } from '../../core/registry.js';
 import { h, icon } from '../../core/ui.js';
 import { getSettingsSync } from '../../core/settings.js';
 import { kv } from '../../core/db.js';
-import { today, diffDays, keyFromTs, formatDate } from '../../core/dates.js';
 import { QUOTES, pickQuote } from './home-quotes.js';
 
 let quoteIndex = null;   // pro App-Start einmal gezogen
@@ -33,22 +32,6 @@ function subline() {
   return 'Noch ein Film oder schon ins Bett?';
 }
 
-async function backupReminder() {
-  const s = getSettingsSync();
-  const installed = await kv.get('installedAt');
-  const last = s.backup.lastAt;
-  const ref = last || installed;
-  if (!ref) return null;
-  const days = diffDays(keyFromTs(ref), today());
-  if (!(last ? days >= s.backup.remindDays : days >= 7)) return null;
-  return h('a', { class: 'banner warn', href: '#/einstellungen?s=daten' },
-    icon('shield'),
-    h('div', { style: { flex: 1 } },
-      h('strong', null, 'Zeit für ein Backup'),
-      h('div', { class: 'small muted' }, last ? `Letztes Backup: ${formatDate(keyFromTs(last))}` : 'Du hast noch kein Backup gemacht.')),
-    icon('chevR', 18));
-}
-
 async function render(el) {
   const q = await quoteOfThisStart();
   el.classList.add('home');
@@ -61,8 +44,6 @@ async function render(el) {
   el.append(h('figure', { class: 'home-quote' },
     h('blockquote', { lang: 'en' }, `“${q.text}”`),
     h('figcaption', null, q.src ? `— ${q.src}` : '— Mathub-Weisheit')));
-  const b = await backupReminder();
-  if (b) el.append(b);
 }
 
 registerModule({

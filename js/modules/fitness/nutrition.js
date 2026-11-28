@@ -9,6 +9,8 @@
 // Ältere Einträge 'food' und items 'food-fav' (bis 0.4) bleiben in der DB, werden aber nicht mehr genutzt.
 
 import { registerModule } from '../../core/registry.js';
+import { on } from '../../core/events.js';
+import { parseHash } from '../../core/router.js';
 import { entries, kv } from '../../core/db.js';
 import { getSettingsSync, updateSettings } from '../../core/settings.js';
 import {
@@ -18,11 +20,12 @@ import {
 import { today, addDays, startOfWeek, weekday, formatDate, WEEKDAYS_SHORT, WEEKDAYS_LONG, dayRange, isKey } from '../../core/dates.js';
 import { barChart, bucketize } from '../../core/charts.js';
 import {
-  RECIPES, INGREDIENTS, CATEGORIES, CANTEEN, EATING_OUT, DIETS, MEALS, CUISINES, TAGS, EQUIPMENT, dietFits, recipeById,
+  RECIPES, INGREDIENTS, CATEGORIES, CANTEEN, EATING_OUT, DIETS, MEALS, CUISINES, TAGS, EQUIPMENT, dietFits, recipeById, isVeganRecipe,
   formatAmount, equipmentOk,
 } from './food-data.js';
 import { loadRatings, rate, isFavorite, isDisliked } from './ratings.js';
-import { photoFor, prefetchPhotos } from './rezept-fotos.js';
+import { photoFor, creditText, isPhotoHidden, setPhotoHidden } from './rezept-fotos.js';
+import { markEaten, unmarkEaten, eatenIndex } from './rezept-log.js';
 
 const SLOTS = ['fruehstueck', 'mittag', 'abend'];
 const rKey = (r) => 'rezept:' + (r.id || r);
@@ -225,18 +228,18 @@ function shoppingText(list, plan, weekStart) {
  */
 export function recipeImage(r, { size = 'md' } = {}) {
   const el = illustratedImage(r, size);
-  if (r.id) {
-    photoFor(r.id).then((ph) => {
-      if (!ph?.url) return;
-      const img = new Image();
-      img.alt = '';
-      img.decoding = 'async';
-      img.className = 'rimg-photo';
-      img.onload = () => { el.classList.add('has-photo'); el.append(img); };
-      img.src = ph.url;
-    });
-  }
+  if (r.id) photoFor(r.id).then((ph) => setPhoto(el, ph));
   return el;
+}
+
+function setPhoto(el, ph) {
+  if (!ph?.url) return;
+  const img = new Image();
+  img.alt = '';
+  img.decoding = 'async';
+  img.className = 'rimg-photo';
+  img.onload = () => { el.querySelector('.rimg-photo')?.remove(); el.classList.add('has-photo'); el.append(img); };
+  img.src = ph.url;
 }
 
 function illustratedImage(r, size) {
@@ -278,15 +281,55 @@ async function openRecipe(r, after) {
   const setP = (n) => { portions = Math.max(1, Math.min(8, n)); pLabel.textContent = `${portions} ${portions === 1 ? 'Portion' : 'Portionen'}`; renderIng(); };
   setP(portions);
 
-  const photoSource = h('p', { class: 'small muted photo-src' });
-  photoFor(r.id).then((ph) => {
-    if (ph?.page) photoSource.replaceChildren('Symbolfoto: ', h('a', { class: 'link', href: ph.page, target: '_blank', rel: 'noopener' }, 'Wikipedia / Wikimedia Commons'));
-  });
+  let bigImg = recipeImage(r, { size: 'lg' });
+  const photoSource = h('div', { class: 'small muted photo-src' });
+  const swapImage = () => { const nx = recipeImage(r, { size: 'lg' }); bigImg.replaceWith(nx); bigImg = nx; };
+  const showSource = async () => {
+    if (await isPhotoHidden(r.id)) {
+      photoSource.replaceChildren(h('span', null, 'Icon statt Foto'), h('button', {
+        type: 'button', class: 'btn small',
+        onclick: async () => { await setPhotoHidden(r.id, false); swapImage(); showSource(); after?.(); },
+      }, '📷 Foto wieder zeigen'));
+      return;
+    }
+    const ph = await photoFor(r.id);
+    if (!ph?.url) { photoSource.replaceChildren(); return; }
+    photoSource.replaceChildren(
+      h('span', null, 'Foto: ', ph.page ? h('a', { class: 'link', href: ph.page, target: '_blank', rel: 'noopener' }, creditText(ph) || 'Wikimedia Commons') : (creditText(ph) || 'Wikimedia Commons')),
+      h('button', {
+        type: 'button', class: 'btn small',
+        onclick: async () => { await setPhotoHidden(r.id, true); swapImage(); showSource(); after?.(); },
+      }, '🙈 Gefällt mir nicht'));
+  };
+  showSource();
+
+  // Gegessen (wird mit der gemeinsamen Liste geteilt)
+  const eatenBox = h('div', { class: 'eaten-box' });
+  const renderEaten = async () => {
+    const log = (await eatenIndex()).byRecipe.get(r.id) || [];
+    const ate = log.some((e) => e.date === today());
+    eatenBox.replaceChildren(
+      h('div', { class: 'small' }, log.length
+        ? [h('strong', null, `${log.length}× gegessen`), ` · zuletzt ${formatDate(log[0].date)}${log[0].updatedBy ? ' (' + log[0].updatedBy + ')' : ''}`]
+        : h('span', { class: 'muted' }, 'Noch nicht als gegessen markiert.')),
+      h('button', {
+        type: 'button', class: 'btn small' + (ate ? '' : ' btn-primary'),
+        onclick: async () => {
+          if (ate) await unmarkEaten(r.id, today()); else await markEaten(r.id, today());
+          toast(ate ? 'Haken entfernt' : 'Als heute gegessen markiert');
+          renderEaten();
+          after?.();
+        },
+      }, ate ? '✓ Heute gegessen' : 'Heute gegessen'));
+  };
+  renderEaten();
+
   const sheet = openSheet({
     title: r.name,
     body: [
-      recipeImage(r, { size: 'lg' }),
+      bigImg,
       photoSource,
+      eatenBox,
       h('div', { class: 'chips' },
         h('span', { class: 'tag', dataset: { diet: r.diet } }, DIETS[r.diet]),
         h('span', { class: 'tag' }, `⏱ ${r.time} Min.`),
@@ -303,8 +346,8 @@ async function openRecipe(r, after) {
       ingBox,
       r.spice ? h('p', { class: 'small muted' }, h('strong', null, 'Gewürze: '), r.spice) : null,
       h('ol', { class: 'steps' }, r.steps.map((st) => h('li', null, st))),
-      field('Deine Bewertung', starRating(rec?.stars, async (v) => { await rate(rKey(r), v); toast(v ? 'Bewertung gespeichert' : 'Bewertung entfernt'); }),
-        'Gut bewertete Rezepte kommen im Wochenplan häufiger vor, 1–2 Sterne gar nicht mehr.'),
+      field('Bewertung', starRating(rec?.stars, async (v) => { await rate(rKey(r), v); toast(v ? 'Bewertung gespeichert' : 'Bewertung entfernt'); after?.(); }),
+        `Gut bewertete Rezepte kommen im Wochenplan häufiger vor, 1–2 Sterne gar nicht mehr.${rec?.updatedBy ? ` Zuletzt bewertet von ${rec.updatedBy}.` : ''}`),
     ],
     footer: [
       h('button', {
@@ -366,7 +409,7 @@ async function getFilter() {
   return filter;
 }
 const saveFilter = () => kv.set('food:filter', filter);
-const activeFilterCount = (f) => ['meal', 'diet', 'kcal', 'equip'].filter((k) => f[k] !== 'alle').length
+const activeFilterCount = (f) => ['meal', 'kcal', 'equip'].filter((k) => f[k] !== 'alle').length
   + (f.time ? 1 : 0) + (f.protein ? 1 : 0) + f.cuisines.length + f.tags.length + (f.fav ? 1 : 0) + (f.q ? 1 : 0);
 
 function applyFilter(f, ratings) {
@@ -375,7 +418,6 @@ function applyFilter(f, ratings) {
   let list = RECIPES.filter((r) => {
     const rec = ratings.get(rKey(r));
     if (f.meal !== 'alle' && !r.meals.includes(f.meal)) return false;
-    if (f.diet !== 'alle' && !dietFits(r.diet, f.diet)) return false;
     if (f.time && r.time > f.time) return false;
     if (f.equip === 'airfryer' && !r.allTags.includes('airfryer')) return false;
     if (f.equip === 'herd' && !(r.eq.length && r.eq.every((e) => e === 'herd'))) return false;
@@ -403,20 +445,21 @@ function applyFilter(f, ratings) {
   return list.sort(sorters[f.sort] || sorters.empfohlen);
 }
 
-function recipeTile(r, rec, onClick) {
+function recipeTile(r, rec, onClick, eatenCount = 0) {
   return h('button', { class: 'rtile', onclick: onClick },
     recipeImage(r),
     h('div', { class: 'rtile-body' },
       h('div', { class: 'rtile-title' }, r.name),
       h('div', { class: 'rtile-meta' }, `${fmtInt(r.nut.kcal)} kcal · ${r.nut.p} g P · ${r.time}′`),
       h('div', { class: 'rtile-tags' },
-        r.diet === 'vegan' ? h('span', { class: 'mini vegan' }, 'vegan') : r.diet === 'vegetarisch' ? h('span', { class: 'mini veg' }, 'veggie') : null,
+        eatenCount ? h('span', { class: 'mini vegan' }, `✓ ${eatenCount}× gegessen`) : null,
         rec ? h('span', { class: 'mini star' }, '★'.repeat(rec.stars)) : null)));
 }
 
 async function renderRecipes(el, ctx) {
   const f = await getFilter();
   const ratings = await loadRatings();
+  const eaten = await eatenIndex();
   const after = () => ctx.refresh();
   const set = async (patch) => { Object.assign(filter, patch); await saveFilter(); ctx.refresh(); };
   const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -431,9 +474,6 @@ async function renderRecipes(el, ctx) {
     chip('Alle', f.meal === 'alle', () => set({ meal: 'alle' })),
     Object.entries(MEALS).map(([k, l]) => chip(l, f.meal === k, () => set({ meal: k })))));
   el.append(h('div', { class: 'chips scroll' },
-    chip('🌱 Vegan', f.diet === 'vegan', () => set({ diet: f.diet === 'vegan' ? 'alle' : 'vegan' })),
-    chip('Vegetarisch', f.diet === 'vegetarisch', () => set({ diet: f.diet === 'vegetarisch' ? 'alle' : 'vegetarisch' })),
-    chip('Ohne Fleisch', f.diet === 'pesc', () => set({ diet: f.diet === 'pesc' ? 'alle' : 'pesc' })),
     chip('★ Favoriten', f.fav, () => set({ fav: !f.fav })),
     chip('💪 ≥ 30 g Protein', f.protein === 30, () => set({ protein: f.protein === 30 ? 0 : 30 })),
     chip('🍟 Heißluftfritteuse', f.equip === 'airfryer', () => set({ equip: f.equip === 'airfryer' ? 'alle' : 'airfryer' })),
@@ -446,7 +486,6 @@ async function renderRecipes(el, ctx) {
     field('Küchengerät', h('div', { class: 'chips' }, [['alle', 'egal'], ['airfryer', 'Heißluftfritteuse'], ['herd', 'Nur Herd'], ['ofen', 'Backofen'], ['keins', 'Ohne Kochen']].map(([v, l]) => chip(l, f.equip === v, () => set({ equip: v }))))),
     field('Kalorien pro Portion', h('div', { class: 'chips' }, [['alle', 'egal'], ['lt400', '< 400'], ['400-600', '400–600'], ['600-800', '600–800'], ['gt800', '> 800']].map(([v, l]) => chip(l, f.kcal === v, () => set({ kcal: v }))))),
     field('Protein mindestens', h('div', { class: 'chips' }, [[0, 'egal'], [20, '20 g'], [30, '30 g'], [40, '40 g']].map(([v, l]) => chip(l, f.protein === v, () => set({ protein: v }))))),
-    field('Ernährung', h('div', { class: 'chips' }, [['alle', 'Alles'], ['pesc', 'Ohne Fleisch'], ['vegetarisch', 'Vegetarisch'], ['vegan', 'Vegan']].map(([v, l]) => chip(l, f.diet === v, () => set({ diet: v }))))),
     field('Küche', h('div', { class: 'chips' }, Object.entries(CUISINES).map(([k, l]) => chip(l, f.cuisines.includes(k), () => set({ cuisines: toggleIn(f.cuisines, k) }))))),
     field('Eigenschaften', h('div', { class: 'chips' }, Object.entries(TAGS).map(([k, l]) => chip(l, f.tags.includes(k), () => set({ tags: toggleIn(f.tags, k) }))))),
     field('Sortierung', h('div', { class: 'chips' }, [['empfohlen', 'Empfohlen'], ['protein', 'Meiste Protein'], ['dichte', 'Protein pro kcal'], ['kcalAuf', 'Wenigste kcal'], ['kcalAb', 'Meiste kcal'], ['zeit', 'Schnellste'], ['name', 'A–Z']].map(([v, l]) => chip(l, f.sort === v, () => set({ sort: v }))))),
@@ -461,7 +500,7 @@ async function renderRecipes(el, ctx) {
     listBox.replaceChildren(
       h('div', { class: 'section-title' }, `${list.length} ${list.length === 1 ? 'Rezept' : 'Rezepte'}`),
       list.length
-        ? h('div', { class: 'rgrid' }, list.map((r) => recipeTile(r, ratings.get(rKey(r)), () => openRecipe(r, after))))
+        ? h('div', { class: 'rgrid' }, list.map((r) => recipeTile(r, ratings.get(rKey(r)), () => openRecipe(r, after), eaten.byRecipe.get(r.id)?.length || 0)))
         : card(null, {}, h('p', { class: 'muted' }, 'Keine Rezepte für diese Filter.')));
   }
   renderList();
@@ -492,7 +531,6 @@ function openPlanSettings(after) {
     field('Abends regelmäßig auswärts', h('div', { class: 'chips' }, WEEKDAYS_SHORT.map((d, i) => h('button', {
       type: 'button', class: 'chip' + (st.outDays.includes(i) ? ' active' : ''), onclick: () => { st.outDays = toggle(st.outDays, i); render(); },
     }, d))), 'Wird beim Planen automatisch eingetragen. Spontan geht es pro Mahlzeit im Plan.'),
-    field('Ernährung im Plan', segmented([{ value: 'alle', label: 'Alles' }, { value: 'pesc', label: 'Ohne Fleisch' }, { value: 'vegetarisch', label: 'Veggie' }, { value: 'vegan', label: 'Vegan' }], st.diet, (v) => { st.diet = v; })),
     field('Max. Kochzeit unter der Woche', segmented([15, 20, 30, 45, 60].map((v) => ({ value: v, label: `${v}′` })), st.maxTime, (v) => { st.maxTime = v; })),
     field('Personen (für die Einkaufsliste)', segmented([1, 2, 3, 4].map((v) => ({ value: v, label: String(v) })), st.servings, (v) => { st.servings = v; })),
     cb('Reste vom Vorabend fürs Remote-Mittagessen', 'leftovers'),
@@ -523,7 +561,7 @@ function openPlanSettings(after) {
 
 function slotLabel(k) { return k === 'snack' ? 'Snack' : MEALS[k]; }
 
-function slotRow(slotKey, s, onClick) {
+function slotRow(slotKey, s, onClick, eaten = false) {
   if (!s && slotKey === 'fruehstueck' && prefs().fasting) return null;
   if (s?.r === 'auswaerts') {
     return h('button', { class: 'meal-row out', onclick: onClick },
@@ -541,10 +579,10 @@ function slotRow(slotKey, s, onClick) {
   }
   const r = recipeById(s.r);
   if (!r) return null;
-  return h('button', { class: 'meal-row', onclick: onClick },
+  return h('button', { class: 'meal-row' + (eaten ? ' eaten' : ''), onclick: onClick },
     recipeImage(r, { size: 'xs' }),
     h('span', { class: 'meal-main' },
-      h('span', { class: 'meal-slot' }, slotLabel(slotKey), s.rest ? ' · Reste' : '', s.locked ? ' · 📌' : ''),
+      h('span', { class: 'meal-slot' }, slotLabel(slotKey), s.rest ? ' · Reste' : '', s.locked ? ' · 📌' : '', eaten ? ' · ✓ gegessen' : ''),
       h('span', { class: 'meal-name' }, r.name)),
     h('span', { class: 'meal-kcal' }, fmtInt(r.nut.kcal)));
 }
@@ -578,6 +616,14 @@ async function openSlot(weekStart, plan, d, slotKey, idx, after) {
         }, recipeImage(x, { size: 'xs' }), h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, x.name), h('span', { class: 'list-sub' }, `${fmtInt(x.nut.kcal)} kcal · ${x.nut.p} g P · ${x.time} Min.`))))),
     });
   };
+  const date = addDays(weekStart, d);
+  const eatenToday = r ? (await eatenIndex()).byDate.get(date)?.has(r.id) : false;
+  const toggleEaten = async () => {
+    if (eatenToday) await unmarkEaten(r.id, date); else await markEaten(r.id, date, slotKey);
+    sheet.close();
+    toast(eatenToday ? 'Haken entfernt' : `${r.name}: gegessen ✓`);
+    after();
+  };
   const sheet = openSheet({
     title: `${WEEKDAYS_LONG[d]} · ${slotLabel(slotKey)}`,
     body: [
@@ -586,6 +632,7 @@ async function openSlot(weekStart, plan, d, slotKey, idx, after) {
           : s?.r === 'auswaerts' ? h('p', null, `Auswärts essen (≈ ${fmtInt(p.outKcal)} kcal, ${p.outProtein} g Protein geschätzt). „Anderen Vorschlag“ plant wieder selbst gekocht.`)
             : h('p', { class: 'muted' }, 'Noch nichts geplant.'),
       h('div', { class: 'list' },
+        r && date <= today() ? h('button', { class: 'list-item', onclick: toggleEaten }, icon('check'), h('span', { class: 'list-main' }, h('span', { class: 'list-title' }, eatenToday ? 'Gegessen-Haken entfernen' : 'Gegessen ✓'), h('span', { class: 'list-sub' }, 'Wird mit der gemeinsamen Liste geteilt'))) : null,
         r ? h('button', { class: 'list-item', onclick: () => { sheet.close(); openRecipe(r, after); } }, icon('list'), h('span', { class: 'list-main' }, 'Rezept ansehen'), icon('chevR', 18)) : null,
         h('button', { class: 'list-item', onclick: reroll }, icon('refresh'), h('span', { class: 'list-main' }, 'Anderen Vorschlag'), icon('chevR', 18)),
         h('button', { class: 'list-item', onclick: choose }, icon('dot'), h('span', { class: 'list-main' }, 'Aus allen Rezepten wählen'), icon('chevR', 18)),
@@ -598,12 +645,46 @@ async function openSlot(weekStart, plan, d, slotKey, idx, after) {
   });
 }
 
+/** Seit 0.14 nur vegan: nicht-vegane Rezepte in dieser und künftigen Wochen durch vegane ersetzen. */
+async function veganizePlan(wk, plan) {
+  if (!plan?.days || wk < weekOf(today())) return 0;
+  const p = prefs();
+  const ratings = await loadRatings();
+  const map = new Map();
+  let n = 0;
+  const fix = (slot, slotKey) => {
+    if (!slot?.r || slot.r === 'kantine' || slot.r === 'auswaerts' || isVeganRecipe(slot.r)) return slot;
+    if (!map.has(slot.r)) {
+      const taken = new Set(map.values());
+      const pool = candidates(slotKey, p, ratings, 60);
+      const pick = pickWeighted(pool.filter((x) => !taken.has(x.id)).length ? pool.filter((x) => !taken.has(x.id)) : pool, (x) => weightFor(x, ratings, new Map(), p));
+      map.set(slot.r, pick?.id || null);
+    }
+    n++;
+    return map.get(slot.r) ? { ...slot, r: map.get(slot.r) } : null;
+  };
+  for (const day of Object.values(plan.days)) {
+    if (!day) continue;
+    for (const k of SLOTS) day[k] = fix(day[k], k);
+    day.snack = (day.snack || []).map((x) => fix(x, 'snack')).filter(Boolean);
+  }
+  const before = (plan.extras || []).length;
+  plan.extras = (plan.extras || []).filter((e) => isVeganRecipe(e.r));
+  n += before - plan.extras.length;
+  if (n) await savePlan(wk, plan);
+  return n;
+}
+
 async function renderPlan(el, ctx) {
   const wk = isKey(ctx.query.w) ? startOfWeek(ctx.query.w) : weekOf(today());
   const p = prefs();
   const t = targets();
   const after = () => ctx.refresh();
   let plan = await getPlan(wk);
+  const replaced = await veganizePlan(wk, plan);
+  if (replaced) toast(`${replaced} nicht-vegane ${replaced === 1 ? 'Mahlzeit' : 'Mahlzeiten'} durch vegane ersetzt`);
+  const eatenIdx = await eatenIndex();
+  const eatenOn = (date, slot) => !!(slot?.r && eatenIdx.byDate.get(date)?.has(slot.r));
   const go = (w) => ctx.navigate('/kochen', { v: 'plan', w: w === weekOf(today()) ? undefined : w }, { replace: true });
   const generate = async () => {
     const ratings = await loadRatings();
@@ -665,8 +746,8 @@ async function renderPlan(el, ctx) {
           }, '🍽️ auswärts'),
           h('span', { class: 'tag', dataset: { kind: dayKind(date, p) } }, dayKind(date, p)))),
       h('div', { class: 'meals' },
-        SLOTS.map((k) => slotRow(k, day[k], open(k))),
-        (day.snack || []).map((s, i) => slotRow('snack', s, open('snack', i))),
+        SLOTS.map((k) => slotRow(k, day[k], open(k), eatenOn(date, day[k]))),
+        (day.snack || []).map((s, i) => slotRow('snack', s, open('snack', i), eatenOn(date, s))),
         h('button', { class: 'meal-add', onclick: open('snack', (day.snack || []).length) }, '+ Snack')),
       h('div', { class: 'metric' },
         h('div', { class: 'metric-top' }, h('span', { class: 'small muted' }, 'Geschätzt'), h('span', { class: 'num small' }, `${fmtInt(tot.kcal)} / ${fmtInt(t.kcal)} kcal · ${fmtInt(tot.p)} g P`)),
@@ -680,6 +761,7 @@ async function renderShopping(el, ctx) {
   const wk = isKey(ctx.query.w) ? startOfWeek(ctx.query.w) : weekOf(today());
   const p = prefs();
   const plan = await getPlan(wk);
+  await veganizePlan(wk, plan);
   if (!plan) {
     el.append(card(null, {}, emptyState('Erstelle zuerst einen Wochenplan – daraus entsteht die Einkaufsliste.',
       h('a', { class: 'btn btn-primary', href: '#/kochen?v=plan' }, 'Zum Wochenplan'))));
@@ -756,9 +838,15 @@ async function renderShopping(el, ctx) {
 }
 
 // ---------- Seite ----------
+// Neue Bewertungen/Gegessen-Haken von anderen (gemeinsame Liste) → Seite neu zeichnen
+let shownCtx = null;
+on('filme:sync', (e) => {
+  if (shownCtx && e.status === 'done' && e.changedLocal && parseHash().path === shownCtx.path) shownCtx.refresh();
+});
+
 async function render(el, ctx) {
+  shownCtx = ctx;
   const view = ctx.query.v || 'plan';
-  prefetchPhotos();   // echte Rezeptfotos gebündelt nachladen (einmalig, danach offline)
   el.append(pageHeader('Kochen'));
   el.append(segmented([{ value: 'plan', label: 'Wochenplan' }, { value: 'rezepte', label: 'Rezepte' }, { value: 'einkauf', label: 'Einkauf' }], view,
     (v) => ctx.navigate('/kochen', { v: v === 'plan' ? undefined : v, w: ctx.query.w }, { replace: true })));

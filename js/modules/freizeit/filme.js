@@ -560,8 +560,8 @@ async function renderShare(el, ctx) {
 
   if (cfg.pending?.action === 'join') {
     el.append(card('Einladung zur gemeinsamen Filmliste', { iconName: 'cloud' },
-      h('p', null, 'Du wurdest zu einer gemeinsamen Filmliste eingeladen', cfg.pending.fileName ? ` („${cfg.pending.fileName}“)` : '', '. Melde dich mit dem Google-Konto an, mit dem die Liste in Google Drive geteilt wurde.'),
-      h('p', { class: 'small muted' }, 'Deine bisherigen Filme werden übernommen – was es in der gemeinsamen Liste schon gibt, wird nicht doppelt angelegt. Google fragt nach Zugriff auf Google Drive; Mathub liest und schreibt dort nur diese eine Datei.'),
+      h('p', null, 'Du wurdest zu einer gemeinsamen Film- & Rezeptliste eingeladen', cfg.pending.fileName ? ` („${cfg.pending.fileName}“)` : '', '. Melde dich mit dem Google-Konto an, mit dem die Liste in Google Drive geteilt wurde.'),
+      h('p', { class: 'small muted' }, 'Deine bisherigen Filme, Rezept-Bewertungen und Gegessen-Haken werden übernommen – was es in der gemeinsamen Liste schon gibt, wird nicht doppelt angelegt. Google fragt nach Zugriff auf Google Drive; Mathub liest und schreibt dort nur diese eine Datei.'),
       h('div', { class: 'btn-row' },
         h('button', { class: 'btn', onclick: async () => { await saveSyncConfig({ pending: null }); ctx.refresh(); } }, 'Abbrechen'),
         h('button', { class: 'btn btn-primary', onclick: () => login({ returnHash: '#/filme?v=teilen' }) }, 'Mit Google anmelden'))));
@@ -570,7 +570,7 @@ async function renderShare(el, ctx) {
 
   // Nicht verbunden: Einladung nutzen, neu anlegen oder bestehende Datei verknüpfen
   el.append(card('So funktioniert’s', { iconName: 'cloud' },
-    h('p', { class: 'small' }, 'Eure Filmliste liegt als Datei in Google Drive. Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an – Änderungen (neue Filme, gesehen, Bewertungen, „Heute Abend“) sind nach wenigen Sekunden bei allen.'),
+    h('p', { class: 'small' }, 'Eure Filme und Rezepte liegen als Datei in Google Drive. Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an – Änderungen (neue Filme, gesehen, Bewertungen, „Heute Abend“, gegessene und bewertete Rezepte) sind nach wenigen Sekunden bei allen.'),
     h('p', { class: 'small muted' }, 'Du hast einen Einladungslink bekommen? Einfach auf dem Handy öffnen.')));
 
   const cid = textInput({ value: cfg.clientId, placeholder: '…apps.googleusercontent.com' });

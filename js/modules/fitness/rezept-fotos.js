@@ -1,136 +1,194 @@
-// Echte Fotos für Rezepte – wie bei den Filmen über Wikipedia, auf dem Gerät geladen (nicht im Repo).
-// Jedes Rezept zeigt ein frei lizenziertes Foto (Wikimedia Commons) des Gerichts aus dem passenden
-// Wikipedia-Artikel – also ein Symbolfoto des Gerichts, nicht exakt dieses Rezept.
-// Gemerkt in kv 'kochen:fotos' {<titel>: {url, page, at}}; Bilddateien speichert der Service Worker.
-// Ohne Netz/Treffer bleibt das illustrierte Bild.
+// Echte Fotos für Rezepte – auf dem Gerät von Wikimedia Commons geladen (frei lizenziert, nicht im Repo).
+//
+// Pro Rezept ein englischer Suchbegriff für das angerichtete Gericht (SEARCH). Die App sucht auf Commons
+// zuerst unter den ausgezeichneten „Quality images“ (hohe Auflösung, gute Bildqualität), dann allgemein;
+// nur Fotos (JPEG), mindestens 800 px breit, eher Querformat. Reicht das nicht, kommt das Titelbild des
+// Wikipedia-Artikels (FALLBACK_ARTICLE), sonst bleibt die Illustration.
+// Pro Rezept wird nur EINMAL gesucht; das Ergebnis wird gemerkt (kv 'kochen:fotos2').
+// Gefällt ein Foto nicht, wird es ausgeblendet (kv 'kochen:fotoAus') und die Icon-Illustration gezeigt –
+// ohne neue Abfrage bei Wikimedia.
 
 import { kv } from '../../core/db.js';
 
-/** Rezept-id → Artikel der englischen Wikipedia („de:“ = deutsche Wikipedia). */
-export const PHOTO_TITLES = {
-  'overnight-oats-protein': 'Overnight oats',
-  'skyr-bowl': 'Skyr',
-  'tofu-ruehrei': 'Tofu scramble',
-  'ruehrei-brot': 'Scrambled eggs',
-  'pb-porridge': 'Porridge',
-  'quark-apfel': 'Quark (dairy product)',
-  'protein-pancakes': 'Pancake',
-  'smoothie-bowl': 'Smoothie',
-  'avocado-toast': 'Avocado toast',
-  'chia-pudding': 'Chia pudding',
-  'linsen-dal': 'Dal',
-  'chili-sin-carne': 'Vegetarian chili',
-  'chili-con-carne': 'Chili con carne',
-  'tofu-brokkoli': 'Fried tofu',
-  'haehnchen-pfanne': 'Stir frying',
-  'linsen-bolognese': 'Bolognese sauce',
-  'pasta-putenhack': 'Pasta',
-  'kichererbsen-curry': 'Chana masala',
-  'lachs-ofenkartoffeln': 'Salmon as food',
-  'ofengemuese-tempeh': 'Tempeh',
-  'buddha-bowl': 'Buddha bowl',
-  'thunfisch-salat': 'Tuna salad',
-  'griech-couscous': 'Couscous',
-  'seitan-gyros': 'Gyros',
-  'haehnchen-wrap': 'Wrap (food)',
-  'linsensuppe': 'Lentil soup',
-  'shakshuka': 'Shakshouka',
-  'gnocchi-spinat': 'Gnocchi',
-  'erdnuss-tofu-nudeln': 'Rice noodles',
-  'garnelen-pasta': 'Shrimp scampi',
-  'burrito-bowl': 'Burrito',
-  'ofen-suesskartoffel': 'Sweet potato',
-  'kuerbissuppe': 'Pumpkin soup',
-  'edamame-nudelsalat': 'Pasta salad',
-  'pilzrisotto': 'Risotto',
-  'haehnchen-bulgur': 'Bulgur',
+export const SEARCH = {
+  'overnight-oats-protein': 'overnight oats',
+  'tofu-ruehrei': 'tofu scramble',
+  'pb-porridge': 'porridge banana',
+  'smoothie-bowl': 'smoothie bowl',
+  'avocado-toast': 'avocado toast',
+  'chia-pudding': 'chia pudding',
+  'linsen-dal': 'dal lentils bowl',
+  'chili-sin-carne': 'vegetarian chili',
+  'tofu-brokkoli': 'tofu broccoli',
+  'linsen-bolognese': 'spaghetti bolognese',
+  'kichererbsen-curry': 'chana masala',
+  'ofengemuese-tempeh': 'roasted vegetables tray',
+  'buddha-bowl': 'buddha bowl',
+  'seitan-gyros': 'gyros pita wrap',
+  'linsensuppe': 'red lentil soup',
+  'gnocchi-spinat': 'gnocchi spinach',
+  'erdnuss-tofu-nudeln': 'peanut noodles',
+  'burrito-bowl': 'burrito bowl',
+  'kuerbissuppe': 'pumpkin soup',
+  'edamame-nudelsalat': 'noodle salad',
+  'pilzrisotto': 'mushroom risotto',
   'raeuchertofu-kartoffeln': 'Bratkartoffeln',
-  'gefuellte-paprika': 'Stuffed peppers',
-  'kartoffel-quark': 'de:Pellkartoffel',
-  'miso-nudelsuppe': 'Miso soup',
-  'tempeh-bowl': 'Teriyaki',
-  'aubergine-curry': 'Baingan bharta',
-  'blumenkohl-bowl': 'Cauliflower',
-  'af-suesskartoffel-tofu': 'Sweet potato fries',
-  'af-falafel-bowl': 'Falafel',
-  'af-haehnchen-kartoffeln': 'Roast chicken',
-  'af-lachs-brokkoli': 'Salmon as food',
-  'af-blumenkohl-wings': 'Buffalo wing',
-  'af-kichererbsen-snack': 'Chickpea',
-  'protein-shake': 'Milkshake',
-  'hummus-sticks': 'Hummus',
-  'schoko-quark': 'Chocolate pudding',
-  'energy-balls': 'Energy ball',
-  'edamame-snack': 'Edamame',
-  'apfel-erdnuss': 'Peanut butter',
-  'sojajoghurt-nuss': 'Yogurt',
-  'huettenkaese-snack': 'Cottage cheese',
+  'gefuellte-paprika': 'stuffed peppers',
+  'miso-nudelsuppe': 'miso soup noodles',
+  'tempeh-bowl': 'tempeh rice bowl',
+  'aubergine-curry': 'eggplant curry',
+  'blumenkohl-bowl': 'roasted cauliflower',
+  'af-suesskartoffel-tofu': 'sweet potato fries',
+  'af-falafel-bowl': 'falafel plate',
+  'af-blumenkohl-wings': 'cauliflower wings',
+  'af-kichererbsen-snack': 'roasted chickpeas',
+  'protein-shake': 'chocolate banana smoothie',
+  'hummus-sticks': 'hummus vegetable sticks',
+  'energy-balls': 'energy balls dates',
+  'edamame-snack': 'edamame',
+  'apfel-erdnuss': 'apple slices peanut butter',
+  'sojajoghurt-nuss': 'yogurt banana walnuts',
 };
 
-const API = { en: 'https://en.wikipedia.org/w/api.php', de: 'https://de.wikipedia.org/w/api.php' };
-const KEY = 'kochen:fotos';
+/** Rückfall: Titelbild dieses Wikipedia-Artikels (englisch). */
+const FALLBACK_ARTICLE = {
+  'overnight-oats-protein': 'Overnight oats', 'tofu-ruehrei': 'Tofu scramble', 'pb-porridge': 'Porridge',
+  'smoothie-bowl': 'Smoothie', 'avocado-toast': 'Avocado toast', 'chia-pudding': 'Chia pudding', 'linsen-dal': 'Dal',
+  'chili-sin-carne': 'Vegetarian chili', 'tofu-brokkoli': 'Fried tofu', 'linsen-bolognese': 'Bolognese sauce',
+  'kichererbsen-curry': 'Chana masala', 'ofengemuese-tempeh': 'Tempeh', 'buddha-bowl': 'Buddha bowl', 'seitan-gyros': 'Gyros',
+  'linsensuppe': 'Lentil soup', 'gnocchi-spinat': 'Gnocchi', 'erdnuss-tofu-nudeln': 'Rice noodles', 'burrito-bowl': 'Burrito',
+  'kuerbissuppe': 'Pumpkin soup', 'edamame-nudelsalat': 'Pasta salad', 'pilzrisotto': 'Risotto', 'raeuchertofu-kartoffeln': 'Bratkartoffeln',
+  'gefuellte-paprika': 'Stuffed peppers', 'miso-nudelsuppe': 'Miso soup', 'tempeh-bowl': 'Teriyaki', 'aubergine-curry': 'Baingan bharta',
+  'blumenkohl-bowl': 'Cauliflower', 'af-suesskartoffel-tofu': 'Sweet potato fries', 'af-falafel-bowl': 'Falafel',
+  'af-blumenkohl-wings': 'Buffalo wing', 'af-kichererbsen-snack': 'Chickpea', 'protein-shake': 'Smoothie', 'hummus-sticks': 'Hummus',
+  'energy-balls': 'Energy ball', 'edamame-snack': 'Edamame', 'apfel-erdnuss': 'Peanut butter', 'sojajoghurt-nuss': 'Yogurt',
+};
+
+const COMMONS = 'https://commons.wikimedia.org/w/api.php';
+const WIKI = 'https://en.wikipedia.org/w/api.php';
+const KEY = 'kochen:fotos2';
 const RETRY_MISS_MS = 7 * 24 * 3600 * 1000;
+const MAX_CANDS = 1;
+const HIDE_KEY = 'kochen:fotoAus';
+let hidden = null;
+const BAD_NAME = /\b(map|logo|diagram|chart|label|package|packaging|menu|sign|poster|icon|drawing|illustration|stamp|advert|book|screenshot)\b/i;
 
 let memo = null;
-let prefetching = null;
+const pending = new Map();
+let active = 0;
+const queue = [];
 
 async function cache() {
   if (!memo) memo = await kv.get(KEY, {});
   return memo;
 }
+async function persist() { await kv.set(KEY, await cache()); }
 
-const split = (t) => (t.startsWith('de:') ? ['de', t.slice(3)] : ['en', t]);
-
-function fresh(hit) {
-  return hit && (hit.url || Date.now() - hit.at < RETRY_MISS_MS);
+/** Höchstens 3 Abfragen gleichzeitig – Wikimedia freundlich behandeln. */
+function throttled(fn) {
+  return new Promise((resolve, reject) => {
+    const run = async () => {
+      active++;
+      try { resolve(await fn()); } catch (e) { reject(e); } finally { active--; queue.shift()?.(); }
+    };
+    if (active < 3) run(); else queue.push(run);
+  });
 }
 
-/** Alle fehlenden Fotos gebündelt nachschlagen (max. 50 Titel pro Anfrage). */
-export function prefetchPhotos() {
-  if (prefetching) return prefetching;
-  prefetching = (async () => {
-    if (globalThis.navigator && navigator.onLine === false) return;
-    const c = await cache();
-    const todo = [...new Set(Object.values(PHOTO_TITLES))].filter((t) => !fresh(c[t]));
-    if (!todo.length) return;
-    const byLang = { en: [], de: [] };
-    for (const t of todo) { const [lang, title] = split(t); byLang[lang].push(title); }
-    for (const lang of ['en', 'de']) {
-      const titles = byLang[lang];
-      for (let i = 0; i < titles.length; i += 45) {
-        const chunk = titles.slice(i, i + 45);
-        try {
-          const p = new URLSearchParams({
-            action: 'query', format: 'json', formatversion: '2', origin: '*', redirects: '1',
-            prop: 'pageimages|info', inprop: 'url', piprop: 'thumbnail', pithumbsize: '640', pilicense: 'free',
-            titles: chunk.join('|'),
-          });
-          const res = await fetch(`${API[lang]}?${p}`);
-          if (!res.ok) continue;
-          const q = (await res.json()).query || {};
-          // angefragter Titel → endgültiger Titel (Schreibweise, Weiterleitungen)
-          const final = new Map(chunk.map((t) => [t, t]));
-          for (const n of q.normalized || []) for (const [k, v] of final) if (v === n.from) final.set(k, n.to);
-          for (const r of q.redirects || []) for (const [k, v] of final) if (v === r.from) final.set(k, r.to);
-          const pages = new Map((q.pages || []).map((pg) => [pg.title, pg]));
-          for (const t of chunk) {
-            const pg = pages.get(final.get(t));
-            const key = lang === 'de' ? 'de:' + t : t;
-            c[key] = { url: pg?.thumbnail?.source || null, page: pg?.fullurl || null, at: Date.now() };
-          }
-        } catch { /* offline – nächstes Mal */ }
-      }
+const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+async function commonsSearch(query, limit) {
+  const p = new URLSearchParams({
+    action: 'query', format: 'json', formatversion: '2', origin: '*',
+    generator: 'search', gsrsearch: query, gsrnamespace: '6', gsrlimit: String(limit),
+    prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '720',
+    iiextmetadatafilter: 'Artist|LicenseShortName',
+  });
+  const res = await fetch(`${COMMONS}?${p}`);
+  if (!res.ok) throw new Error('Commons ' + res.status);
+  const pages = (await res.json()).query?.pages || [];
+  return pages
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+    .map((pg) => ({ title: pg.title, ii: pg.imageinfo?.[0] }))
+    .filter(({ title, ii }) => ii && ii.mime === 'image/jpeg' && ii.width >= 800
+      && ii.width / ii.height >= 0.95 && ii.width / ii.height <= 2.2 && !BAD_NAME.test(title))
+    .map(({ ii }) => ({
+      url: ii.thumburl || ii.url,
+      page: ii.descriptionurl || null,
+      artist: stripHtml(ii.extmetadata?.Artist?.value).slice(0, 60) || null,
+      license: stripHtml(ii.extmetadata?.LicenseShortName?.value) || null,
+    }));
+}
+
+async function articleImage(title) {
+  const p = new URLSearchParams({
+    action: 'query', format: 'json', formatversion: '2', origin: '*', redirects: '1',
+    prop: 'pageimages|info', inprop: 'url', piprop: 'thumbnail', pithumbsize: '720', pilicense: 'free', titles: title,
+  });
+  const res = await fetch(`${WIKI}?${p}`);
+  if (!res.ok) return null;
+  const pg = (await res.json()).query?.pages?.[0];
+  return pg?.thumbnail?.source ? { url: pg.thumbnail.source, page: pg.fullurl || null, artist: null, license: null } : null;
+}
+
+async function lookup(recipeId) {
+  const term = SEARCH[recipeId];
+  let cands = [];
+  if (term) {
+    cands = await commonsSearch(`${term} incategory:"Quality images"`, 12);
+    if (cands.length < MAX_CANDS) {
+      const more = await commonsSearch(`${term} food`, 15);
+      for (const c of more) if (!cands.some((x) => x.url === c.url)) cands.push(c);
     }
-    await kv.set(KEY, c);
-  })().finally(() => { prefetching = null; });
-  return prefetching;
+  }
+  if (!cands.length && FALLBACK_ARTICLE[recipeId]) {
+    const a = await articleImage(FALLBACK_ARTICLE[recipeId]);
+    if (a) cands.push(a);
+  }
+  return cands.slice(0, MAX_CANDS);
 }
 
-/** Foto zu einem Rezept: {url, page} oder null. */
+async function hiddenSet() {
+  if (!hidden) hidden = new Set(await kv.get(HIDE_KEY, []));
+  return hidden;
+}
+export async function isPhotoHidden(recipeId) { return (await hiddenSet()).has(recipeId); }
+
+/** Foto ausblenden (Icon-Illustration statt Foto) bzw. wieder zeigen – nur auf diesem Gerät. */
+export async function setPhotoHidden(recipeId, hide) {
+  const s = await hiddenSet();
+  if (hide) s.add(recipeId); else s.delete(recipeId);
+  await kv.set(HIDE_KEY, [...s]);
+}
+
+/** Foto zu einem Rezept: {url, page, artist, license} oder null (auch wenn ausgeblendet). */
 export async function photoFor(recipeId) {
-  const t = PHOTO_TITLES[recipeId];
-  if (!t) return null;
-  let hit = (await cache())[t];
-  if (!fresh(hit)) { await prefetchPhotos(); hit = (await cache())[t]; }
-  return hit?.url ? hit : null;
+  if (await isPhotoHidden(recipeId)) return null;
+  return loadPhoto(recipeId);
+}
+
+function loadPhoto(recipeId) {
+  if (!SEARCH[recipeId] && !FALLBACK_ARTICLE[recipeId]) return Promise.resolve(null);
+  if (pending.has(recipeId)) return pending.get(recipeId);
+  const run = (async () => {
+    const c = await cache();
+    let hit = c[recipeId];
+    const stale = !hit || (!hit.cands?.length && Date.now() - hit.at > RETRY_MISS_MS);
+    if (stale && !(globalThis.navigator && navigator.onLine === false)) {
+      try {
+        const cands = await throttled(() => lookup(recipeId));
+        hit = { cands, pick: 0, at: Date.now() };
+        c[recipeId] = hit;
+        await persist();
+      } catch { /* offline – später erneut */ }
+    }
+    return hit?.cands?.[0] || null;
+  })().finally(() => pending.delete(recipeId));
+  pending.set(recipeId, run);
+  return run;
+}
+
+export function creditText(ph) {
+  if (!ph) return '';
+  return [ph.artist, ph.license].filter(Boolean).join(' · ');
 }

@@ -16,24 +16,20 @@ Persönlicher Hub als installierbare Web-App (PWA) mit zwei Bereichen: **Filme**
 
 Neue Versionen werden automatisch erkannt. Beim Öffnen erscheint oben **„Neue Version verfügbar“** → *Aktualisieren*. Deine Daten bleiben erhalten.
 
-## Backup
+## Daten sichern
 
-*Mehr → Einstellungen → Daten & Backup*:
-- **Backup teilen** öffnet den Android-Teilen-Dialog (z. B. „In Drive speichern“).
-- **Backup wiederherstellen** spielt eine Datei wieder ein (zusammenführen oder ersetzen).
+Filme sowie gegessene und bewertete Rezepte liegen in der **gemeinsamen Liste** in Google Drive (Filme → ☁️). Wochenplan, Einkaufsliste und Einstellungen gibt es nur auf dem Handy – sie gehen verloren, wenn die Browserdaten gelöscht werden.
 
-Die App erinnert dich nach 14 Tagen an ein neues Backup. Ohne Backup gehen die Daten verloren, wenn du die Browserdaten löschst oder das Handy wechselst.
-
-## Funktionen (Version 0.13)
+## Funktionen (Version 0.14)
 
 | Bereich | Was du machen kannst |
 |---|---|
 | **Home** | Begrüßung und bei jedem Start ein neues englisches Filmzitat oder ein alberner Spruch; Zahnrad → Einstellungen |
 | **Filme** | Gemeinsame Liste über Google Drive (jede Person mit eigenem Google-Konto, Einladungslink), neue Filme automatisch mit Wikipedia-Infos; Merkliste mit Titelbildern (von Wikipedia, offline gespeichert), Kategorien & Filter, ausführlichen Infos, „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
-| **Kochen** | Rezepte mit echten Fotos der Gerichte (Wikipedia/Wikimedia Commons, offline gespeichert) & vielen Filtern (vegan, Heißluftfritteuse …), Wochenplan für Intervallfasten mit Kantine an Bürotagen und Auswärts-Essen, variable Einkaufsliste – Kalorien geschätzt |
+| **Kochen** | Nur vegane Rezepte (37) mit Fotos der Gerichte (Wikimedia Commons, offline gespeichert; „Gefällt mir nicht“ → Icon) & vielen Filtern, „gegessen“ abhaken und bewerten (wird mit der gemeinsamen Liste geteilt), Wochenplan für Intervallfasten mit Kantine an Bürotagen und Auswärts-Essen, variable Einkaufsliste |
 | **Design** | 9 Farbschemata (Mint, Kino, Popcorn, Ozean, Lavendel, Neon, Retro, Wald, Tomate) oder eigene Akzentfarbe, Hell/Dunkel/System, Form (rund, extra weich, kantig), Schrift (modern, klassisch, Schreibmaschine, verspielt) |
 | **Erinnerungen** | Push um 7:30 und 20:30 Uhr: Essen des Tages und Film für heute Abend, sonst ein Spruch |
-| **Einstellungen** | Design, Profil & Kalorien-Richtwert fürs Kochen, Erinnerungen, Backup |
+| **Einstellungen** | Design, Profil & Kalorien-Richtwert fürs Kochen, Erinnerungen |
 
 ## Entwicklung
 

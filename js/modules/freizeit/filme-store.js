@@ -11,6 +11,13 @@ import { emit } from '../../core/events.js';
 import { FILM_CATALOG } from './filme-data.js';
 
 export const SHARED_KV = ['filme:heute'];
+
+/**
+ * Weitere item-Arten, die mit der gemeinsamen Datei geteilt werden (pro id gewinnt der neuere Datensatz).
+ * rating = Rezept-Bewertungen, gegessen = gegessene Rezepte. Neue Art → hier eintragen; die Datensätze
+ * brauchen eine feste id, updatedAt (items.put) und beim Löschen {deleted:true} statt items.delete.
+ */
+export const EXTRA_SYNC_KINDS = ['rating', 'gegessen'];
 const SEED_TS = Date.parse('2026-11-17');   // Startliste – älter als jede spätere Änderung
 
 let whoAmI = '';

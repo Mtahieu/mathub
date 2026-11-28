@@ -1,4 +1,4 @@
-// Einstellungen: Design, Profil, Kochen-Ziele (+ Richtwert-Rechner), Erinnerungen, Daten/Backup, Über.
+// Einstellungen: Design, Profil, Kochen-Ziele (+ Richtwert-Rechner), Erinnerungen, Daten, Über.
 
 import { registerModule } from '../../core/registry.js';
 import { entries, clearAll } from '../../core/db.js';
@@ -7,7 +7,6 @@ import {
   h, icon, card, pageHeader, field, numInput, intInput, readNum, textInput, select, checkbox, toast, confirmDialog,
   openSheet, withUnit, fmt, fmtInt, segmented,
 } from '../../core/ui.js';
-import { createBackup, downloadFile, shareFile, markBackupDone, readBackupFile, restoreBackup } from '../../core/backup.js';
 import { checkForUpdate } from '../../core/update.js';
 import { pushSupported, pushState, enablePush, disablePush, testNotification, REPO_SECRET_URL, WORKFLOW_URL } from '../../core/push.js';
 import { APP_VERSION } from '../../version.js';
@@ -150,44 +149,19 @@ async function render(el, ctx) {
   // ----- Daten -----
   const persisted = await navigator.storage?.persisted?.().catch(() => false);
   const est = await navigator.storage?.estimate?.().catch(() => null);
-  const fileInput = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files?.[0];
-    fileInput.value = '';
-    if (!file) return;
-    try {
-      const data = await readBackupFile(file);
-      openImportSheet(data, ctx);
-    } catch (err) { toast(err.message); }
-  });
-  const doBackup = async (share) => {
-    const b = await createBackup();
-    try {
-      if (share && await shareFile(b.name, b.text)) { await markBackupDone(); saved('Backup geteilt'); return; }
-    } catch (err) { if (err.name === 'AbortError') return; }
-    downloadFile(b.name, b.text);
-    await markBackupDone();
-    saved('Backup heruntergeladen');
-  };
-  el.append(card('Daten & Backup', { iconName: 'shield', cls: 'anchor-daten' },
-    h('p', { class: 'muted small' }, 'Alle Daten liegen nur auf diesem Gerät im Browser-Speicher. Sichere sie regelmäßig als Datei, z. B. in Google Drive.'),
+  el.append(card('Daten', { iconName: 'shield', cls: 'anchor-daten' },
+    h('p', { class: 'muted small' }, 'Filme sowie gegessene und bewertete Rezepte liegen in der gemeinsamen Liste (Filme → ☁️) und sind dort gesichert. Wochenplan, Einkaufsliste und Einstellungen gibt es nur auf diesem Gerät.'),
     h('div', { class: 'kv-list small' },
-      h('div', null, h('span', { class: 'muted' }, 'Letztes Backup'), h('span', null, s.backup.lastAt ? formatDate(keyFromTs(s.backup.lastAt)) : 'noch keins')),
       h('div', null, h('span', { class: 'muted' }, 'Speicher geschützt'), h('span', null, persisted ? 'ja' : 'nein (App installieren hilft)')),
       est?.usage != null ? h('div', null, h('span', { class: 'muted' }, 'Belegt'), h('span', null, `${fmt(est.usage / 1024 / 1024, 1)} MB`)) : null),
-    h('div', { class: 'btn-row' },
-      h('button', { class: 'btn btn-primary', onclick: () => doBackup(true) }, icon('share', 18), 'Backup teilen'),
-      h('button', { class: 'btn', onclick: () => doBackup(false) }, icon('download', 18), 'Herunterladen')),
-    h('button', { class: 'btn', onclick: () => fileInput.click() }, icon('upload', 18), 'Backup wiederherstellen'),
-    fileInput,
     h('button', {
       class: 'btn btn-danger',
       onclick: async () => {
-        if (!await confirmDialog('Alle Einträge, Listen und Einstellungen auf diesem Gerät werden gelöscht. Mach vorher ein Backup!', { okLabel: 'Alles löschen', danger: true })) return;
+        if (!await confirmDialog('Alle Daten auf diesem Gerät werden gelöscht. Die gemeinsame Liste in Google Drive bleibt bestehen.', { okLabel: 'Alles löschen', danger: true })) return;
         await clearAll();
         location.reload();
       },
-    }, icon('trash', 18), 'Alle Daten löschen')));
+    }, icon('trash', 18), 'Alle Daten auf diesem Gerät löschen')));
 
   // ----- Über -----
   el.append(card('Über Mathub', { iconName: 'shield' },
@@ -286,36 +260,12 @@ function openSetupSheet(config, onDone) {
   });
 }
 
-function openImportSheet(data, ctx) {
-  const counts = `${data.entries.length} Einträge, ${(data.items || []).length} Listen-Einträge, gesichert am ${new Date(data.exportedAt).toLocaleString('de-DE')}`;
-  const go = async (mode) => {
-    if (mode === 'replace' && !await confirmDialog('Alle aktuellen Daten werden durch das Backup ersetzt.', { okLabel: 'Ersetzen', danger: true })) return;
-    try {
-      await restoreBackup(data, mode);
-      sheet.close();
-      toast('Backup wiederhergestellt');
-      setTimeout(() => location.reload(), 600);
-    } catch (err) { toast(err.message); }
-  };
-  const sheet = openSheet({
-    title: 'Backup wiederherstellen',
-    body: [
-      h('p', null, counts),
-      h('p', { class: 'muted small' }, '„Zusammenführen“ ergänzt und überschreibt gleiche Einträge. „Ersetzen“ löscht vorher alles auf diesem Gerät.'),
-    ],
-    footer: [
-      h('button', { class: 'btn', onclick: () => go('merge') }, 'Zusammenführen'),
-      h('button', { class: 'btn btn-danger', onclick: () => go('replace') }, 'Ersetzen'),
-    ],
-  });
-  return ctx;
-}
 
 registerModule({
   id: 'settings',
   area: 'hub',
   title: 'Einstellungen',
-  description: 'Design, Profil, Backup',
+  description: 'Design, Profil, Erinnerungen',
   order: 95,
   routes: [{ path: '/einstellungen', render }],
 });

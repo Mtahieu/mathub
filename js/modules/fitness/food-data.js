@@ -124,7 +124,8 @@ export const INGREDIENTS = Object.fromEntries(Object.entries(I).map(([id, [name,
 // meals: fruehstueck | mittag | abend | snack · diet: vegan | vegetarisch | pesc | fleisch
 // ing: [zutat, Gramm/ml pro Portion, optional Hinweis] · spice: Gewürze (nur Text, Vorrat)
 // tags: mealprep (hält 2–3 Tage), onepot, guenstig, ohnekochen, kalt
-export const RECIPES = [
+// Alle Rezepte (auch nicht-vegane – alte Wochenpläne verweisen evtl. noch darauf). Angezeigt/geplant wird nur RECIPES.
+const ALL_RECIPES = [
   // ---------- Frühstück ----------
   {
     id: 'overnight-oats-protein', name: 'Protein-Overnight-Oats mit Beeren', emoji: '🥣', hue: 265,
@@ -593,7 +594,7 @@ export const TAGS = {
 };
 
 // Abgeleitete Felder einmalig berechnen
-for (const r of RECIPES) {
+for (const r of ALL_RECIPES) {
   r.eq = EQ[r.id] ?? ['herd'];
   r.af = AF[r.id] || null;
   r.nut = nutrition(r);
@@ -606,7 +607,11 @@ for (const r of RECIPES) {
   r.allTags = [...new Set([...r.tags, ...auto])];
 }
 
-export const recipeById = (id) => RECIPES.find((r) => r.id === id) || null;
+/** Mathub kocht nur vegan (seit 0.14): nur diese Rezepte erscheinen in Liste, Suche und Wochenplan. */
+export const RECIPES = ALL_RECIPES.filter((r) => r.diet === 'vegan');
+export const isVeganRecipe = (id) => RECIPES.some((r) => r.id === id);
+
+export const recipeById = (id) => ALL_RECIPES.find((r) => r.id === id) || null;
 
 /** Lässt sich das Rezept mit den vorhandenen Geräten kochen? (Backofen ist durch Heißluftfritteuse ersetzbar, wenn es eine Variante gibt.) */
 export function equipmentOk(r, available) {

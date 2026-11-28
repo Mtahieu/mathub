@@ -3,7 +3,8 @@
 // Jedes Gerät meldet sich mit dem eigenen Google-Konto an (OAuth „Token“-Ablauf per Weiterleitung, kein Server).
 // Die Datei gehört dem Ersteller und wird in Drive geteilt (Ordner/geteilte Ablage). Inhalt:
 //   {app:'mathub-filme', schema, hinweis, updatedAt, updatedBy, films:[<vollständige Film-Datensätze>],
-//    shared:{<kv-Schlüssel>: {value, updatedAt, updatedBy}}}
+//    shared:{<kv-Schlüssel>: {value, updatedAt, updatedBy}}, items:{rating:[…], gegessen:[…]}}
+// (items = weitere geteilte Arten aus EXTRA_SYNC_KINDS: Rezept-Bewertungen und gegessene Rezepte)
 // Abgleich: pro Film gewinnt der Datensatz mit dem neueren updatedAt (Löschungen als {deleted:true}).
 // Unbekannte Felder werden unverändert übernommen – neue Film-Attribute späterer Versionen gehen nicht verloren.
 //
@@ -14,7 +15,7 @@
 
 import { items, kv } from '../../core/db.js';
 import { emit, on } from '../../core/events.js';
-import { allFilms, getSharedRecord, setShared, setMe, seedOnce, SHARED_KV } from './filme-store.js';
+import { allFilms, getSharedRecord, setShared, setMe, seedOnce, SHARED_KV, EXTRA_SYNC_KINDS } from './filme-store.js';
 
 export const SCOPE = 'https://www.googleapis.com/auth/drive';
 const DRIVE = 'https://www.googleapis.com/drive/v3';
@@ -179,7 +180,7 @@ async function download(fileId) {
   let doc;
   try { doc = JSON.parse(text); } catch { throw new Error('Die Datei ist keine Mathub-Filmliste (kein gültiges JSON).'); }
   if (doc?.app !== FILE_APP) throw new Error('Die Datei ist keine Mathub-Filmliste.');
-  return { ...doc, films: Array.isArray(doc.films) ? doc.films : [], shared: doc.shared || {} };
+  return { ...doc, films: Array.isArray(doc.films) ? doc.films : [], shared: doc.shared || {}, items: doc.items || {} };
 }
 
 async function upload(fileId, doc) {
@@ -204,7 +205,7 @@ export async function createFile(name, folderId) {
   return r.json();
 }
 
-const emptyDoc = () => ({ app: FILE_APP, schema: FILE_SCHEMA, hinweis: 'Wird von Mathub verwaltet – bitte nur über die App ändern.', films: [], shared: {} });
+const emptyDoc = () => ({ app: FILE_APP, schema: FILE_SCHEMA, hinweis: 'Wird von Mathub verwaltet (Filme & Rezepte) – bitte nur über die App ändern.', films: [], shared: {}, items: {} });
 
 // ---------- Zusammenführen ----------
 const ts = (r) => Number(r?.updatedAt) || 0;
@@ -231,6 +232,14 @@ export function mergeFilms(local, remote, now = Date.now()) {
       byId.set(dup.id, { id: dup.id, kind: 'film', catalogId: dup.catalogId, title: dup.title, deleted: true, createdAt: dup.createdAt, updatedAt: now });
     }
   }
+  return [...byId.values()];
+}
+
+/** Allgemein: pro id gewinnt der neuere Datensatz. */
+export function mergeById(local, remote) {
+  const byId = new Map();
+  for (const r of remote) if (r?.id) byId.set(r.id, r);
+  for (const l of local) { const r = byId.get(l.id); if (!r || ts(l) > ts(r)) byId.set(l.id, l); }
   return [...byId.values()];
 }
 
@@ -310,16 +319,32 @@ export function syncNow({ join = false, force = false } = {}) {
         if (shared[k] && !same(shared[k], sharedLocal[k])) { await setShared(k, null, { source: 'sync', record: shared[k] }); changedLocal++; }
       }
 
+      // weitere Arten (Rezept-Bewertungen, gegessen)
+      const extra = {};
+      let extraChanged = false;
+      for (const kind of EXTRA_SYNC_KINDS) {
+        const loc = await items.all(kind);
+        const rem = Array.isArray(remote.items?.[kind]) ? remote.items[kind] : [];
+        const m = mergeById(loc, rem);
+        const locById = new Map(loc.map((r) => [r.id, r]));
+        for (const rec of m) if (!same(locById.get(rec.id), rec)) { await items.putRaw({ ...rec, kind }, { source: 'sync' }); changedLocal++; }
+        const remById = new Map(rem.map((r) => [r.id, r]));
+        if (m.length !== rem.length || m.some((r) => !same(remById.get(r.id), r))) extraChanged = true;
+        extra[kind] = m.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      }
+
       const remoteById = new Map(remote.films.map((r) => [r.id, r]));
       const needUpload = merged.length !== remote.films.length
         || merged.some((r) => !same(remoteById.get(r.id), r))
         || !same(shared, remote.shared || {})
+        || extraChanged
         || remote.schema !== FILE_SCHEMA;
       let version = meta.version;
       if (needUpload) {
         const doc = {
           ...remote, app: FILE_APP, schema: Math.max(FILE_SCHEMA, remote.schema || 0), hinweis: emptyDoc().hinweis,
           updatedAt: Date.now(), updatedBy: cfg.me || '', films: merged.sort((a, b) => String(a.id).localeCompare(String(b.id))), shared,
+          items: { ...(remote.items || {}), ...extra },
         };
         version = (await upload(cfg.fileId, doc)).version ?? version;
       }
@@ -383,7 +408,7 @@ function startScheduler() {
   document.addEventListener('visibilitychange', tick);
   addEventListener('online', tick);
   on('data:changed', async (e) => {
-    const film = e?.store === 'items' && e.kind === 'film';
+    const film = e?.store === 'items' && (e.kind === 'film' || EXTRA_SYNC_KINDS.includes(e.kind));
     const sharedKv = e?.store === 'kv' && SHARED_KV.includes(e.type);
     if ((!film && !sharedKv) || e.source === 'sync' || e.source === 'seed') return;
     const cfg = await getSyncConfig();

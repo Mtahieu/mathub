@@ -451,7 +451,6 @@ details.measures[open] summary { margin-bottom: 10px; }
 .rimg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; animation: photo-in .35s ease both; }
 .rimg.has-photo::after { display: none; }
 @keyframes photo-in { from { opacity: 0; } to { opacity: 1; } }
-.photo-src { margin: -6px 0 0; }
 .rimg-side.s0 { top: 12%; left: 9%; transform: rotate(-12deg); }
 .rimg-side.s1 { bottom: 10%; right: 9%; transform: rotate(10deg); }
 .rimg-side.s2 { top: 12%; right: 11%; transform: rotate(14deg); }
@@ -651,3 +650,9 @@ details.measures[open] summary { margin-bottom: 10px; }
 .color-input { width: 52px; height: 40px; border: 0; padding: 0; background: none; cursor: pointer; }
 .design-preview { padding: 14px; border-radius: calc(14px * var(--rs, 1)); background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; }
 .design-preview p { margin: 0; }
+
+/* ---------- Kochen: Foto-Quelle, gegessen ---------- */
+.photo-src { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: -4px 0 0; }
+.eaten-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: calc(12px * var(--rs, 1)); background: var(--surface-2); }
+.meal-row.eaten .meal-name { color: var(--muted); }
+.meal-row.eaten .meal-slot { color: var(--accent); }

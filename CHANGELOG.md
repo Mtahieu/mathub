@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0 – 2026-11-28
+
+- **Kochen nur noch vegan:** Rezeptliste, Suche und Wochenplan zeigen nur die 37 veganen Rezepte; die Diät-Filter sind weg. Nicht-vegane Mahlzeiten in dieser und künftigen Wochen werden beim Öffnen automatisch durch vegane ersetzt (Reste vom Vorabend bleiben stimmig).
+- **Schönere Rezeptfotos:** gezielte Suche nach angerichteten Gerichten auf Wikimedia Commons, bevorzugt ausgezeichnete „Quality images“, nur hochauflösende Fotos im Querformat; mit Urheber und Lizenz im Rezept. Pro Rezept wird nur einmal gesucht.
+- **„Gefällt mir nicht“:** blendet das Foto eines Rezepts aus und zeigt stattdessen die Icon-Illustration – ohne neue Abfrage; jederzeit rückgängig.
+- **Gegessen & Bewertungen in der gemeinsamen Liste:** Rezepte im Wochenplan oder im Rezept als „gegessen“ abhaken; Bewertungen und Gegessen-Haken werden mit allen geteilt (mit Namen). Kacheln zeigen, wie oft ein Rezept gegessen wurde.
+- **Backup-Funktion entfernt** (Einstellungen und Erinnerung auf der Startseite). Gesichert ist, was in der gemeinsamen Liste liegt; Wochenplan, Einkaufsliste und Einstellungen bleiben nur auf dem Gerät.
+- Keine Datenmigration nötig.
+
 ## 0.13.0 – 2026-11-28
 
 - **Mathub neu aufgestellt:** Unten gibt es nur noch **Home, Filme und Kochen**. Schlaf, Körperwerte, Supplements, Job, Fortschritt, Monatsübersicht und „Mehr“ sind entfernt – früher eingetragene Daten bleiben in der Datenbank und im Backup erhalten, werden aber nicht mehr angezeigt.
