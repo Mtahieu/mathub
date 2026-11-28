@@ -24,7 +24,7 @@ Alle Daten liegen nur auf dem Handy. Filme sowie gegessene und bewertete Rezepte
 
 | Bereich | Was du machen kannst |
 |---|---|
-| **Home** | Begrüßung, bei jedem Start ein neues englisches Filmzitat oder ein alberner Spruch, darunter „Heute in Karlsruhe“ (Veranstaltungen von keepkarlsruheboring.de, heute & morgen, offline mit letztem Stand); Zahnrad → Einstellungen |
+| **Home** | Begrüßung, bei jedem Start ein neues englisches Filmzitat oder ein alberner Spruch, darunter „Heute in Karlsruhe“ (Veranstaltungen von keepkarlsruheboring.org, heute & morgen, offline mit letztem Stand); Zahnrad → Einstellungen |
 | **Filme** | neue Filme automatisch mit Wikipedia-Infos; Merkliste mit Titelbildern (von Wikipedia, offline gespeichert), Kategorien & Filter, ausführlichen Infos, „gesehen“-Haken, Bewertung und eigenen Filmen; mehrere auswählen → „Hilf mir zu entscheiden!“ fragt Stimmung, Zeit und Energie ab und lost den Film für heute Abend aus |
 | **Kochen** | Appetitliche Rezeptübersicht: „Lust auf …?“-Rezept des Tages, Themen-Karussells (Schnell, Wohlfühlessen, Proteinbomben, Heißluftfritteuse, Frühstück, Snacks), großes Bildraster mit Kurztexten; gezeichnete Bilder mit Licht & Dampf; „Gegessen“ per ✓ (schon gegessene eingeklappt), danach bewerten; Personenzahl wählbar; Einkaufsliste |
 | **Teilen** | Nach jeder Änderung Banner „Jetzt teilen“ → WhatsApp öffnet sich (auf Wunsch direkt im Chat) mit Link; die andere Person tippt ihn an und Mathub übernimmt Filme, Gesehen, Bewertungen, „Heute Abend“ und gegessene Rezepte – ohne Konto |

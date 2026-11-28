@@ -24,7 +24,7 @@ js/modules/
   fitness/      Bereich „Kochen“ (Ordnername historisch): kochen (Rezeptliste wie Filme, Einkaufsliste),
                 food-data (Zutaten & Rezepte; angezeigt nur vegane), rezept-bild (gezeichnete Rezeptbilder aus den Zutaten),
                 rezept-log (gegessen), ratings (Bewertungen) – gegessen & Bewertungen werden geteilt
-  freizeit/     karlsruhe (Veranstaltungen von keepkarlsruheboring.de), filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
+  freizeit/     karlsruhe (Veranstaltungen von keepkarlsruheboring.org), filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), teilen (Teilen per
                 WhatsApp-Link), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
 .github/workflows/reminders.yml   Zeitplan der Push-Erinnerungen
@@ -162,7 +162,7 @@ Seit 0.14 gibt es keine Backup-Funktion mehr – Filme und Rezept-Daten liegen d
 
 ## Veranstaltungen Karlsruhe
 
-`karlsruhe.js` lädt Termine von [Keep Karlsruhe Boring](https://keepkarlsruheboring.de) (Gancio): `GET /api/events?start=<unix>&end=<unix>` für heute bzw. morgen, ohne Anmeldung. Startseite (`homeCard`): die noch kommenden Termine von heute (max. 4); Seite `#/karlsruhe`: ganzer Tag, Umschalter Heute/Morgen. Ergebnis 15 Min. gemerkt (kv `ka:events`), ohne Netz der letzte Stand. Ein Tipp öffnet den Termin auf keepkarlsruheboring.de.
+`karlsruhe.js` lädt Termine von [Keep Karlsruhe Boring](https://keepkarlsruheboring.org) (Gancio): `GET /api/events?start=<unix>&end=<unix>` für heute bzw. morgen, ohne Anmeldung. Startseite (`homeCard`): die noch kommenden Termine von heute (max. 4); Seite `#/karlsruhe`: ganzer Tag, Umschalter Heute/Morgen. Ergebnis 15 Min. gemerkt (kv `ka:events2`), ohne Netz der letzte Stand. Ein Tipp öffnet den Termin auf keepkarlsruheboring.org.
 
 ## Filmposter
 

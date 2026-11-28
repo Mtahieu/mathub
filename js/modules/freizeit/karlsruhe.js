@@ -1,15 +1,15 @@
-// Veranstaltungen in Karlsruhe von „Keep Karlsruhe Boring“ (keepkarlsruheboring.de, läuft auf Gancio).
+// Veranstaltungen in Karlsruhe von „Keep Karlsruhe Boring“ (keepkarlsruheboring.org, läuft auf Gancio).
 // Öffentliche Schnittstelle ohne Anmeldung: GET /api/events?start=<unix>&end=<unix>
 //   → [{id, title, slug, start_datetime, end_datetime, multidate, place:{name, address}, tags:[], media:[{url}]}]
 // Anzeige: Karte auf der Startseite (homeCard) und Seite #/karlsruhe (heute/morgen).
-// Zuletzt geladene Liste je Tag in kv 'ka:events' – so bleibt sie offline sichtbar.
+// Zuletzt geladene Liste je Tag in kv 'ka:events2' – so bleibt sie offline sichtbar.
 
 import { registerModule } from '../../core/registry.js';
 import { kv } from '../../core/db.js';
 import { h, icon, card, pageHeader, segmented, emptyState } from '../../core/ui.js';
 import { today, addDays, fromKey, formatDate } from '../../core/dates.js';
 
-export const KKB = 'https://keepkarlsruheboring.de';
+export const KKB = 'https://keepkarlsruheboring.org';
 const FRESH_MS = 15 * 60 * 1000;
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -19,7 +19,7 @@ const thumbUrl = (e) => (e.media?.[0]?.url ? `${KKB}/media/thumb/${encodeURIComp
 
 /** Termine eines Tages: {events, at, offline, error} – nutzt den Speicher, wenn frisch genug oder ohne Netz. */
 export async function eventsOn(date, { force = false } = {}) {
-  const cache = await kv.get('ka:events', {});
+  const cache = await kv.get('ka:events2', {});
   const hit = cache[date];
   if (hit && !force && Date.now() - hit.at < FRESH_MS) return { ...hit, cached: true };
   const start = Math.floor(fromKey(date).getTime() / 1000);
@@ -40,7 +40,7 @@ export async function eventsOn(date, { force = false } = {}) {
     const rec = { events: list, at: Date.now() };
     // nur die letzten Tage aufheben
     const keep = Object.fromEntries(Object.entries({ ...cache, [date]: rec }).filter(([k]) => k >= addDays(today(), -2)));
-    await kv.set('ka:events', keep);
+    await kv.set('ka:events2', keep);
     return rec;
   } catch (err) {
     if (hit) return { ...hit, cached: true, offline: true };
@@ -61,8 +61,8 @@ function eventRow(e, { thumbs = false } = {}) {
 }
 
 function problemText(r) {
-  if (r.error === 'offline') return 'Gerade keine Verbindung zu keepkarlsruheboring.de.';
-  if (r.error) return `keepkarlsruheboring.de antwortet nicht (${r.error}).`;
+  if (r.error === 'offline') return 'Gerade keine Verbindung zu keepkarlsruheboring.org.';
+  if (r.error) return `keepkarlsruheboring.org antwortet nicht (${r.error}).`;
   return null;
 }
 
@@ -93,7 +93,7 @@ async function render(el, ctx) {
   const r = await eventsOn(date, { force: ctx.query.neu === '1' });
   el.append(card(formatDate(date, 'long'), { iconName: 'calendar' },
     r.events.length ? h('div', { class: 'list' }, r.events.map((e) => eventRow(e, { thumbs: true })))
-      : emptyState(problemText(r) || 'Für diesen Tag ist nichts eingetragen.', h('a', { class: 'btn', href: KKB, target: '_blank', rel: 'noopener' }, 'Auf keepkarlsruheboring.de schauen'))));
+      : emptyState(problemText(r) || 'Für diesen Tag ist nichts eingetragen.', h('a', { class: 'btn', href: KKB, target: '_blank', rel: 'noopener' }, 'Auf keepkarlsruheboring.org schauen'))));
   el.append(h('p', { class: 'muted small center' },
     'Termine von ', h('a', { class: 'link', href: KKB, target: '_blank', rel: 'noopener' }, 'Keep Karlsruhe Boring'),
     ' – dem offenen Veranstaltungskalender für Karlsruhe, in den jede Person Termine eintragen kann.',

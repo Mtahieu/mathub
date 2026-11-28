@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.1 – 2026-11-28
+
+- Veranstaltungen kommen jetzt von der richtigen Adresse **keepkarlsruheboring.org** (vorher fälschlich .de). Zwischengespeicherte Termine werden neu geladen.
+
 ## 0.19.0 – 2026-11-28
 
 - **Heute in Karlsruhe:** Die Startseite zeigt unter dem Spruch die noch anstehenden Veranstaltungen von heute aus [Keep Karlsruhe Boring](https://keepkarlsruheboring.de) – mit Uhrzeit, Ort und Schlagworten; ein Tipp öffnet den Termin. „Mehr“ führt zur Übersicht mit Heute/Morgen und Bildern. Ohne Netz bleibt der zuletzt geladene Stand sichtbar. Keine Anmeldung nötig.
