@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1 – 2026-11-28
+
+- **Filme: „Smile 2“** (2024, Parker Finn) aufgenommen – Horror/Thriller, Stimmung Gruseln & Spannung, Intensität „heftig“, mit Beschreibung und Titelbild von Wikipedia.
+- Datenmigration 5 ergänzt den Film auf Geräten mit bestehender Liste (gesehene Filme und Bewertungen bleiben unverändert).
+
 ## 0.11.0 – 2026-11-25
 
 - **Filme: „Puss in Boots: The Last Wish“** (Der gestiefelte Kater: Der letzte Wunsch, 2022) aufgenommen. Datenmigration 4 ergänzt ihn auf Geräten mit bestehender Liste.

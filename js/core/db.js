@@ -13,7 +13,7 @@ import { emit } from './events.js';
 
 const DB_NAME = 'mathub';
 export const DB_VERSION = 1;
-export const DATA_VERSION = 4;
+export const DATA_VERSION = 5;
 
 let dbPromise = null;
 
@@ -177,6 +177,19 @@ const MIGRATIONS = [
       await items.put({
         kind: 'film', catalogId: 'puss-in-boots-last-wish', title: 'Puss in Boots: The Last Wish', year: 2022, runtime: 102,
         genres: ['animation', 'abenteuer', 'komoedie', 'fantasy', 'familie'], moods: ['lachen', 'spannung'], intensity: 1, emoji: '🐈', watched: false,
+      });
+    },
+  },
+  {
+    // 0.11.1: „Smile 2“ in die Filmliste (nur wenn die Startliste schon angelegt war).
+    to: 5,
+    async run() {
+      if (!(await kv.get('filme:seeded', false))) return;
+      const films = await items.all('film');
+      if (films.some((f) => f.catalogId === 'smile-2' || /^\s*smile\s*2\s*$/i.test(f.title || ''))) return;
+      await items.put({
+        kind: 'film', catalogId: 'smile-2', title: 'Smile 2', year: 2024, runtime: 127,
+        genres: ['horror', 'thriller'], moods: ['gruseln', 'spannung'], intensity: 3, emoji: '😁', watched: false,
       });
     },
   },

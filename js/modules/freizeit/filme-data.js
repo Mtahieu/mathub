@@ -90,6 +90,15 @@ export const FILM_CATALOG = [
     desc: 'Der gestiefelte Kater hat acht seiner neun Leben leichtsinnig verbraucht – und ein unheimlicher Kopfgeldjäger in Wolfsgestalt ist ihm auf den Fersen. Seine letzte Hoffnung ist der legendäre Wunschstern. Gemeinsam mit seiner Ex-Partnerin Kitty Samtpfote und dem unverbesserlich fröhlichen Hund Perrito macht er sich auf die Suche – im Wettlauf gegen Goldlöckchen mit den drei Bären und den gierigen „Big“ Jack Horner.',
     why: 'Animationsfilm von DreamWorks im Look eines lebendigen Märchenbuchs – witzig, temporeich und überraschend gefühlvoll beim Thema Angst und Sterblichkeit. Oscar-nominiert. Auch ohne die „Shrek“-Filme zu kennen gut verständlich.',
   },
+  {
+    id: 'smile-2', title: 'Smile 2', year: 2024, runtime: 127, emoji: '😁', hue: 350,
+    wiki: 'Smile 2', country: 'USA',
+    director: 'Parker Finn', cast: 'Naomi Scott, Lukas Gage, Rosemarie DeWitt, Kyle Gallner, Ray Nicholson',
+    genres: ['horror', 'thriller'],
+    moods: ['gruseln', 'spannung'], intensity: 3,
+    desc: 'Popstar Skye Riley (Naomi Scott) will nach einem schweren Unfall und dem Entzug mit einer Welttournee ihr Comeback feiern. Doch kurz vor dem Start wird sie Zeugin eines grausamen Vorfalls – und von da an verfolgen sie unheimliche, grinsende Gesichter. Zwischen Proben, Pressedruck und Halluzinationen weiß sie bald nicht mehr, was echt ist.',
+    why: 'Fortsetzung des Horror-Hits „Smile“ (2022), funktioniert aber auch ohne Vorwissen. Intensiver Psycho-Horror mit vielen Schockmomenten und drastischen Szenen, getragen von einer starken Naomi Scott. Nichts für einen entspannten Abend.',
+  },
 ];
 
 export const catalogFilm = (id) => FILM_CATALOG.find((f) => f.id === id) || null;
