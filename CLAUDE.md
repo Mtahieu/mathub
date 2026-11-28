@@ -3,8 +3,8 @@
 Mathub ist eine persönliche PWA des Repo-Besitzers (GitHub: Mtahieu), gehostet über GitHub Pages unter https://mtahieu.github.io/mathub/. Sprache der App, Doku und Commits: **Deutsch**.
 
 ## Grundsätze
-- **Keine persönlichen Daten ins Repo.** Werte (Gewicht, Ziele, Übungen) gibt der Nutzer in der App ein; sie liegen nur in IndexedDB auf dem Handy.
-- **Kein Build, keine Abhängigkeiten, keine CDNs.** Alles muss offline funktionieren (Vanilla JS, ES-Module). Ausnahmen (optional, mit Offline-Ersatz): Filmposter & Film-Infos von Wikipedia/Wikidata und die gemeinsame Filmliste über Google Drive (siehe ARCHITEKTUR.md).
+- **Keine persönlichen Daten ins Repo.** Werte (Filme, Bewertungen, Pläne, Einstellungen) gibt der Nutzer in der App ein; sie liegen nur in IndexedDB auf dem Handy.
+- **Kein Build, keine Abhängigkeiten, keine CDNs.** Alles muss offline funktionieren (Vanilla JS, ES-Module). Ausnahmen (optional, mit Offline-Ersatz): Filmposter, Film-Infos und Rezeptfotos von Wikipedia/Wikidata sowie die gemeinsame Filmliste über Google Drive (siehe ARCHITEKTUR.md).
 - **Modular erweitern:** neue Funktionen als Modul (siehe `docs/ARCHITEKTUR.md`), nicht in den Kern schreiben.
 - **Daten nie brechen:** Struktur-Änderungen nur mit Migration (`db.js`: `DATA_VERSION` + `MIGRATIONS`). Bestehende `type`/`kind`-Formate rückwärtskompatibel halten.
 - Mobile first (Android/Chrome), große Touch-Ziele, Hell/Dunkel über CSS-Variablen.

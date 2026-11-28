@@ -666,6 +666,15 @@ async function todayCard(date, data, ctx) {
   return it ? tonightCard(view(it), ctx) : null;
 }
 
+/** Zeile für Erinnerungen: Film für heute Abend. */
+async function reminderNote(slot, date) {
+  const t = await getShared('filme:heute');
+  if (!t || t.date !== date) return null;
+  const f = await getFilm(t.filmId);
+  if (!f || f.deleted || f.watched) return null;
+  return `🎬 Heute Abend: ${f.title}`;
+}
+
 function summarizeDay(date, data) {
   return data.itemsOf('film').filter((f) => !f.deleted && f.watched && f.watchedAt === date).map((f) => `🎬 „${f.title}“ gesehen${f.stars ? ' ' + '★'.repeat(f.stars) : ''}`);
 }
@@ -676,9 +685,9 @@ registerModule({
   title: 'Filme',
   description: 'Merkliste & Entscheidungshilfe für den Filmabend',
   order: 70,
-  nav: { tab: 5, label: 'Filme', icon: 'film' },
+  nav: { tab: 2, label: 'Filme', icon: 'film' },
   routes: [{ path: '/filme', render }],
   launch,
-  todayCard, summarizeDay,
+  todayCard, summarizeDay, reminderNote,
 });
 

@@ -4,11 +4,11 @@
 import { buildReminder, slotForHour } from './js/core/reminders.js';
 import { kv } from './js/core/db.js';
 
-const VERSION = '0.12.0';
+const VERSION = '0.13.0';
 const CACHE = `mathub-${VERSION}`;
-const POSTER_CACHE = 'posters-v1';   // Filmposter von Wikipedia – bleibt über Updates erhalten
+const POSTER_CACHE = 'posters-v1';   // Filmposter & Rezeptfotos von Wikipedia – bleibt über Updates erhalten
 const POSTER_HOST = 'upload.wikimedia.org';
-const POSTER_MAX = 200;
+const POSTER_MAX = 300;
 
 const PRECACHE = [
   './',
@@ -31,23 +31,17 @@ const PRECACHE = [
   './js/core/registry.js',
   './js/core/router.js',
   './js/core/settings.js',
-  './js/core/streaks.js',
+  './js/core/theme.js',
   './js/core/ui.js',
   './js/core/update.js',
   './js/modules/index.js',
-  './js/modules/hub/calendar.js',
-  './js/modules/hub/more.js',
-  './js/modules/hub/progress.js',
+  './js/modules/hub/home.js',
+  './js/modules/hub/home-quotes.js',
   './js/modules/hub/settings.js',
-  './js/modules/hub/today.js',
-  './js/modules/fitness/body.js',
   './js/modules/fitness/food-data.js',
-  './js/modules/job/checkin.js',
   './js/modules/fitness/nutrition.js',
   './js/modules/fitness/ratings.js',
-  './js/modules/fitness/sleep.js',
-  './js/modules/fitness/supplement-data.js',
-  './js/modules/fitness/supplements.js',
+  './js/modules/fitness/rezept-fotos.js',
   './js/modules/freizeit/filme-data.js',
   './js/modules/freizeit/filme-poster.js',
   './js/modules/freizeit/filme-store.js',

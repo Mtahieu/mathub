@@ -1,28 +1,19 @@
 // Zentrale Liste aller Bereiche und Module.
 // Neues Modul: Datei anlegen → hier importieren → in sw.js (PRECACHE) eintragen → `node tools/check.mjs`.
+// Tabs unten: Home (1), Filme (2), Kochen (3). Einstellungen über das Zahnrad auf Home.
 
 import { registerArea } from '../core/registry.js';
 
-registerArea({ id: 'fitness', title: 'Gesundheit', icon: 'heart', order: 10 });
-registerArea({ id: 'job', title: 'Job', icon: 'briefcase', order: 20 });
-registerArea({ id: 'freizeit', title: 'Freizeit', icon: 'film', order: 30 });
+registerArea({ id: 'freizeit', title: 'Filme', icon: 'film', order: 10 });
+registerArea({ id: 'fitness', title: 'Kochen', icon: 'food', order: 20 });   // Ordner heißt historisch „fitness“
 registerArea({ id: 'hub', title: 'Allgemein', icon: 'home', order: 90 });
 
-// Hub (bereichsübergreifend)
-import './hub/today.js';
-import './hub/progress.js';
-import './hub/calendar.js';
-import './hub/more.js';
+// Allgemein
+import './hub/home.js';
 import './hub/settings.js';
 
-// Bereich: Gesundheit (Ordner heißt historisch „fitness“)
-import './fitness/nutrition.js';
-import './fitness/sleep.js';
-import './fitness/supplements.js';
-import './fitness/body.js';
-
-// Bereich: Job
-import './job/checkin.js';
-
-// Bereich: Freizeit
+// Filme
 import './freizeit/filme.js';
+
+// Kochen (Rezepte, Wochenplan, Einkaufsliste)
+import './fitness/nutrition.js';

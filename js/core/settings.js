@@ -2,12 +2,14 @@
 
 import { kv } from './db.js';
 import { emit } from './events.js';
+import { applyDesign, DEFAULT_DESIGN } from './theme.js';
 
 export const DEFAULT_SETTINGS = {
-  profile: { name: '', heightCm: null, birthYear: null, sex: '', activity: 1.55 },
+  profile: { name: '', heightCm: null, birthYear: null, sex: '', activity: 1.55, weightKg: null },
   targets: { weightGoal: null, kcal: null, protein: null, sleepH: 8 },
   prefs: {
     theme: 'dark',              // 'dark' | 'light' | 'system'
+    design: { ...DEFAULT_DESIGN }, // Farbschema, eigene Akzentfarbe, Form, Schrift (siehe core/theme.js)
     weighDaily: false,          // Wiegen als Tagesziel (optional, standardmäßig aus)
     measureFields: ['chest', 'waist', 'hips', 'arm', 'thigh'],
     streakThreshold: 80,        // % der Tagesziele, damit ein Tag für die Serie zählt
@@ -69,6 +71,7 @@ export function applyTheme() {
     ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
     : t;
   document.documentElement.dataset.theme = resolved;
+  const vars = applyDesign(getSettingsSync().prefs.design, resolved);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = resolved === 'light' ? '#f4f5f8' : '#0e1014';
+  if (meta) meta.content = vars['--bg'];
 }

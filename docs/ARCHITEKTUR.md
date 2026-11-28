@@ -1,31 +1,30 @@
 # Architektur
 
-Mathub ist bewusst **modular** gebaut: Jede Funktion ist ein Modul, das sich in einer Registry anmeldet. Der Kern (Startseite, Navigation, Serien, Kalender, Fortschritt) fragt die Module ab, statt sie zu kennen. Neue Bereiche – Finanzen, Lernen, … – kommen als neue Module dazu, ohne bestehenden Code umzubauen.
+Mathub ist bewusst **modular** gebaut: Jede Funktion ist ein Modul, das sich in einer Registry anmeldet. Der Kern (Navigation, Design, Backup, Erinnerungen) fragt die Module ab, statt sie zu kennen. Aktuell gibt es drei Tabs: Home, Filme, Kochen. Neue Bereiche kommen als neue Module dazu, ohne bestehenden Code umzubauen.
 
 ```
 index.html, manifest.webmanifest, sw.js   PWA-Hülle + Offline-Cache
-css/app.css                                Design (CSS-Variablen, Hell/Dunkel)
+css/app.css                                Design (CSS-Variablen; Farben/Form/Schrift setzt core/theme.js)
 js/app.js                                  Start: DB → Migrationen → Einstellungen → Router
 js/version.js                              App-Version (synchron mit sw.js)
 js/core/
   db.js         IndexedDB: entries / items / kv, Migrationen, Export/Import
   registry.js   Bereiche + Module, loadDays(), goalsForDay(), summarizeDay()
-  streaks.js    Serien-Berechnung aus den Tageszielen aller Module
   router.js     Hash-Router (#/pfad?d=YYYY-MM-DD)
   ui.js         h()-Helfer, Icons, Sheets, Toasts, Formularfelder, Ring, Balken
   charts.js     SVG-Linien-/Balkendiagramme (offline, ohne Bibliothek)
   settings.js   Einstellungen mit Defaults
+  theme.js      Farbschemata (Vorschläge), eigene Akzentfarbe, Form, Schrift → CSS-Variablen
   dates.js      Datums-Helfer (lokale Tages-Schlüssel)
   backup.js     Backup-Datei erstellen/teilen/einlesen
   update.js     Service-Worker-Registrierung + Update-Banner
   push.js       Push einrichten (VAPID-Schlüssel lokal erzeugen, Abo, Code für GitHub-Secret)
-  reminders.js  Text der Erinnerungen aus den Tageszielen (läuft im Service Worker)
+  reminders.js  Text der Erinnerungen aus reminderNote() der Module, sonst ein Spruch (läuft im Service Worker)
 js/modules/
   index.js      ← hier werden Bereiche und Module eingebunden
-  hub/          bereichsübergreifend: today, progress, calendar (Monatsübersicht), more, settings
-  fitness/      Bereich „Gesundheit“: nutrition (Rezepte/Wochenplan/Einkauf), food-data (Zutaten & Rezepte),
-                sleep, body, supplements, supplement-data, ratings (Bewertungen)
-  job/          checkin (täglicher Job-Check-in)
+  hub/          home (Startseite mit Begrüßung & Spruch), home-quotes, settings (inkl. Design)
+  fitness/      Bereich „Kochen“ (Ordnername historisch): nutrition (Rezepte/Wochenplan/Einkauf),
+                food-data (Zutaten & Rezepte), rezept-fotos (echte Fotos über Wikipedia), ratings (Bewertungen)
   freizeit/     filme (Seite), filme-data (Startliste & Infos), filme-store (Datenzugriff), filme-sync (gemeinsame Liste
                 über Google Drive), filme-wiki (Wikipedia/Wikidata-Abgleich), filme-poster (Titelbilder)
 tools/          check.mjs, bump-version.mjs, send-push.mjs (für den Workflow)
@@ -46,18 +45,18 @@ Aktuelle Typen:
 
 | type / kind | data |
 |---|---|
-| `body` (1/Tag) | `{weight, bodyFat, measures:{chest,…}, note}` |
+| `body` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{weight, bodyFat, measures:{chest,…}, note}` |
 | `exercise` | `{exerciseId, sets:[…], done, pain, note}` – **nicht mehr genutzt** seit 0.8.0 (Training entfernt, Altdaten bleiben erhalten) |
 | `food` (1/Tag) | `{items:[{id, name, kcal, protein, t}]}` |
 | `water` (1/Tag) | `{ml}` – **nicht mehr genutzt** seit 0.3.0 (Altdaten bleiben erhalten) |
-| `sleep` (1/Tag) | `{hours, quality}` – Nacht *vor* dem Datum |
-| `job` (1/Tag) | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
+| `sleep` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{hours, quality}` – Nacht *vor* dem Datum |
+| `job` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{leistung, zufriedenheit, gebraucht, highlight, lowlight}` – Werte 1–10 oder `null` |
 | item `exercise` | **nicht mehr genutzt** seit 0.8.0 |
 | `mealplan` (1/Woche, date = Montag) | `{days:{0–6:{fruehstueck, mittag, abend, snack[]}}, checked, extras, shopDays?}` – Slot `{r: rezeptId|'kantine'|'auswaerts', rest?, locked?}` |
 | `food` (1/Tag) | **nicht mehr genutzt** seit 0.5.0 |
 | item `food-fav` | **nicht mehr genutzt** seit 0.5.0 |
-| `supplements` (1/Tag) | `{taken:{itemId: Zeitstempel}}` |
-| item `supplement` | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
+| `supplements` (1/Tag) — **nicht mehr genutzt** seit 0.13.0 | `{taken:{itemId: Zeitstempel}}` |
+| item `supplement` — **nicht mehr genutzt** seit 0.13.0 | `{catalogId?, name, dose, slot, days[0–6], mode:'plan'|'bedarf'}` |
 | item `rating` | `{key, stars, history:[{date, stars}]}` – key = Rezept (früher auch Übungen) |
 | item `film` | `{catalogId?, title, year?, runtime?, genres:[], moods:[], intensity 1–3, emoji?, note?, watched, watchedAt?, stars?}` |
 | kv `filme:poster` | gemerkte Wikipedia-Treffer `{<schlüssel>: {url, page, pageTitle, at}}` – Bilddateien im SW-Cache `posters-v1` |
@@ -92,7 +91,7 @@ registerModule({
   goals(date, data) { return [{ id, label, detail, done, progress, route }] },  // zählt für Serien
   summarizeDay(date, data) { return ['Kurzer Text'] }, // Kalender-Tagesdetails
   reminderNote(slot, date) { return 'Zeile' },         // Zusatzzeile in Push-Erinnerungen (async ok)
-  charts: [{ id, title, render(el, { from, to, data }) {} }],  // Seite „Fortschritt“
+  charts: [{ id, title, render(el, { from, to, data }) {} }],  // Diagramme (derzeit ohne eigene Seite)
   loadData(from, to) { return … },                     // Zusatzdaten außerhalb von entries → data.ext[id] (async ok)
   launch() {},                                          // beim Start vor dem Router (z. B. Rückkehr von Google-Anmeldung)
 });
@@ -134,6 +133,14 @@ Handy A ─┐                                         ┌─ Handy B
 ## Wikipedia-Abgleich neuer Filme
 
 Beim Hinzufügen sucht `filme-wiki.js` den Film auf der englischen Wikipedia (Kurzbeschreibung muss „film“ enthalten), holt über Wikidata Jahr, Laufzeit, Regie, Besetzung, Land, Genres (→ Mathub-Kategorien) und den deutschen Artikel, daraus die Beschreibung. Stimmung/Intensität werden aus den Kategorien abgeleitet. Nur leere Felder werden gefüllt; „Mit Wikipedia abgleichen“ im Bearbeiten-Dialog ersetzt die Wikipedia-Felder. Offline hinzugefügte Filme werden beim nächsten Öffnen nachgeholt.
+
+## Design
+
+`prefs.design = {preset, accent, shape, font}` (Einstellungen → Design). `core/theme.js` berechnet daraus für Hell bzw. Dunkel alle Farb-Variablen (Hintergrund leicht in Richtung des Schemas getönt, Akzent im hellen Modus abgedunkelt für Kontrast), `--rs` (Faktor für alle Rundungen) und `--font`. Neues Schema = Eintrag in `PRESETS`.
+
+## Rezeptfotos
+
+`rezept-fotos.js` ordnet jedem Rezept einen Wikipedia-Artikel des Gerichts zu (`PHOTO_TITLES`, „de:“ = deutsche Wikipedia) und lädt die Titelbilder gebündelt (bis 45 Titel pro Abfrage, nur frei lizenzierte Bilder: `pilicense=free`). Es sind Symbolfotos des Gerichts; die Quelle steht im Rezept. Chefkoch & Co. sind nicht möglich (keine offene Schnittstelle, Browser-Abrufe gesperrt, Bildrechte). Neues Rezept → Eintrag in `PHOTO_TITLES`.
 
 ## Filmposter
 

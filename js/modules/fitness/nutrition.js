@@ -1,4 +1,4 @@
-// Ernährung: Rezeptvorschläge, Wochenplan (mit Kantine an Bürotagen) und Einkaufsliste – ohne manuelles Tracking.
+// Kochen: Rezeptvorschläge, Wochenplan (mit Kantine an Bürotagen) und Einkaufsliste – ohne manuelles Tracking.
 // Kalorien und Protein sind Schätzwerte aus der Zutatendatenbank (food-data.js).
 //
 // entries type 'mealplan' (1 pro Woche, date = Montag):
@@ -22,6 +22,7 @@ import {
   formatAmount, equipmentOk,
 } from './food-data.js';
 import { loadRatings, rate, isFavorite, isDisliked } from './ratings.js';
+import { photoFor, prefetchPhotos } from './rezept-fotos.js';
 
 const SLOTS = ['fruehstueck', 'mittag', 'abend'];
 const rKey = (r) => 'rezept:' + (r.id || r);
@@ -218,8 +219,27 @@ function shoppingText(list, plan, weekStart) {
 }
 
 // ---------- Bild ----------
-/** Illustriertes Rezeptbild (offline): Farbverlauf, Hauptgericht und Zutaten als Emoji. */
+/**
+ * Rezeptbild: zuerst illustriert (offline: Farbverlauf, Hauptgericht und Zutaten als Emoji),
+ * dann – sobald geladen – ein echtes Foto des Gerichts von Wikipedia (siehe rezept-fotos.js).
+ */
 export function recipeImage(r, { size = 'md' } = {}) {
+  const el = illustratedImage(r, size);
+  if (r.id) {
+    photoFor(r.id).then((ph) => {
+      if (!ph?.url) return;
+      const img = new Image();
+      img.alt = '';
+      img.decoding = 'async';
+      img.className = 'rimg-photo';
+      img.onload = () => { el.classList.add('has-photo'); el.append(img); };
+      img.src = ph.url;
+    });
+  }
+  return el;
+}
+
+function illustratedImage(r, size) {
   const main = r.emoji;
   const seen = new Set([main]);
   const sides = r.sides || [...r.ing]
@@ -258,10 +278,15 @@ async function openRecipe(r, after) {
   const setP = (n) => { portions = Math.max(1, Math.min(8, n)); pLabel.textContent = `${portions} ${portions === 1 ? 'Portion' : 'Portionen'}`; renderIng(); };
   setP(portions);
 
+  const photoSource = h('p', { class: 'small muted photo-src' });
+  photoFor(r.id).then((ph) => {
+    if (ph?.page) photoSource.replaceChildren('Symbolfoto: ', h('a', { class: 'link', href: ph.page, target: '_blank', rel: 'noopener' }, 'Wikipedia / Wikimedia Commons'));
+  });
   const sheet = openSheet({
     title: r.name,
     body: [
       recipeImage(r, { size: 'lg' }),
+      photoSource,
       h('div', { class: 'chips' },
         h('span', { class: 'tag', dataset: { diet: r.diet } }, DIETS[r.diet]),
         h('span', { class: 'tag' }, `⏱ ${r.time} Min.`),
@@ -579,7 +604,7 @@ async function renderPlan(el, ctx) {
   const t = targets();
   const after = () => ctx.refresh();
   let plan = await getPlan(wk);
-  const go = (w) => ctx.navigate('/ernaehrung', { v: 'plan', w: w === weekOf(today()) ? undefined : w }, { replace: true });
+  const go = (w) => ctx.navigate('/kochen', { v: 'plan', w: w === weekOf(today()) ? undefined : w }, { replace: true });
   const generate = async () => {
     const ratings = await loadRatings();
     plan = generateWeek(wk, p, ratings, plan);
@@ -614,7 +639,7 @@ async function renderPlan(el, ctx) {
   el.append(h('div', { class: 'stat-grid' },
     h('div', { class: 'stat' }, h('span', { class: 'stat-val' }, fmtInt(avg.kcal)), h('span', { class: 'stat-label' }, `Ø kcal/Tag (Ziel ${fmtInt(t.kcal)})`)),
     h('div', { class: 'stat' }, h('span', { class: 'stat-val' }, fmtInt(avg.p) + ' g'), h('span', { class: 'stat-label' }, `Ø Protein (Ziel ${t.protein} g)`)),
-    h('a', { class: 'stat link-stat', href: '#/ernaehrung?v=einkauf' + (ctx.query.w ? '&w=' + ctx.query.w : '') }, h('span', { class: 'stat-val' }, icon('list', 20)), h('span', { class: 'stat-label' }, 'Einkaufsliste'))));
+    h('a', { class: 'stat link-stat', href: '#/kochen?v=einkauf' + (ctx.query.w ? '&w=' + ctx.query.w : '') }, h('span', { class: 'stat-val' }, icon('list', 20)), h('span', { class: 'stat-label' }, 'Einkaufsliste'))));
 
   days.forEach((date, d) => {
     const day = plan.days?.[d] || { snack: [] };
@@ -657,7 +682,7 @@ async function renderShopping(el, ctx) {
   const plan = await getPlan(wk);
   if (!plan) {
     el.append(card(null, {}, emptyState('Erstelle zuerst einen Wochenplan – daraus entsteht die Einkaufsliste.',
-      h('a', { class: 'btn btn-primary', href: '#/ernaehrung?v=plan' }, 'Zum Wochenplan'))));
+      h('a', { class: 'btn btn-primary', href: '#/kochen?v=plan' }, 'Zum Wochenplan'))));
     return;
   }
   const isCur = wk === weekOf(today());
@@ -733,9 +758,10 @@ async function renderShopping(el, ctx) {
 // ---------- Seite ----------
 async function render(el, ctx) {
   const view = ctx.query.v || 'plan';
-  el.append(pageHeader('Ernährung'));
+  prefetchPhotos();   // echte Rezeptfotos gebündelt nachladen (einmalig, danach offline)
+  el.append(pageHeader('Kochen'));
   el.append(segmented([{ value: 'plan', label: 'Wochenplan' }, { value: 'rezepte', label: 'Rezepte' }, { value: 'einkauf', label: 'Einkauf' }], view,
-    (v) => ctx.navigate('/ernaehrung', { v: v === 'plan' ? undefined : v, w: ctx.query.w }, { replace: true })));
+    (v) => ctx.navigate('/kochen', { v: v === 'plan' ? undefined : v, w: ctx.query.w }, { replace: true })));
   if (view === 'rezepte') return renderRecipes(el, ctx);
   if (view === 'einkauf') return renderShopping(el, ctx);
   return renderPlan(el, ctx);
@@ -750,14 +776,14 @@ async function todayCard(date, data, ctx) {
   if (!plan?.days?.[d]) {
     return card('Essen heute', { iconName: 'food' },
       h('p', { class: 'muted small' }, 'Noch kein Wochenplan – lass dir Rezepte für die Woche vorschlagen, inklusive Einkaufsliste.'),
-      h('a', { class: 'btn btn-primary', href: '#/ernaehrung' }, 'Woche planen'));
+      h('a', { class: 'btn btn-primary', href: '#/kochen' }, 'Woche planen'));
   }
   const day = plan.days[d];
   const tot = dayTotals(day);
   const open = (k, i) => () => openSlot(wk, plan, d, k, i, () => ctx.refresh());
   return card(`Essen heute · ${dayKind(date)}`, {
     iconName: 'food',
-    actions: h('a', { class: 'link', href: '#/ernaehrung' }, 'Woche'),
+    actions: h('a', { class: 'link', href: '#/kochen' }, 'Woche'),
   },
   h('div', { class: 'meals' },
     SLOTS.map((k) => slotRow(k, day[k], open(k))),
@@ -810,11 +836,11 @@ const charts = [
 registerModule({
   id: 'nutrition',
   area: 'fitness',
-  title: 'Ernährung',
+  title: 'Kochen',
   description: 'Rezepte, Wochenplan & Einkaufsliste',
   order: 30,
-  nav: { tab: 3, label: 'Ernährung', icon: 'food' },
-  routes: [{ path: '/ernaehrung', render }],
+  nav: { tab: 3, label: 'Kochen', icon: 'food' },
+  routes: [{ path: '/kochen', render }, { path: '/ernaehrung', render }],
   todayCard, charts, reminderNote,
 });
 

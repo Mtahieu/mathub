@@ -1,4 +1,4 @@
-// Einstellungen: Profil, Ziele (+ Richtwert-Rechner), Tagesziele, Darstellung, Daten/Backup, Über.
+// Einstellungen: Design, Profil, Kochen-Ziele (+ Richtwert-Rechner), Erinnerungen, Daten/Backup, Über.
 
 import { registerModule } from '../../core/registry.js';
 import { entries, clearAll } from '../../core/db.js';
@@ -11,7 +11,7 @@ import { createBackup, downloadFile, shareFile, markBackupDone, readBackupFile, 
 import { checkForUpdate } from '../../core/update.js';
 import { pushSupported, pushState, enablePush, disablePush, testNotification, REPO_SECRET_URL, WORKFLOW_URL } from '../../core/push.js';
 import { APP_VERSION } from '../../version.js';
-import { MEASURES } from '../fitness/body.js';
+import { PRESETS, SHAPES, FONTS, DEFAULT_DESIGN, designVars } from '../../core/theme.js';
 import { keyFromTs, formatDate } from '../../core/dates.js';
 
 const ACTIVITY = [
@@ -21,9 +21,55 @@ const ACTIVITY = [
   { value: 1.725, label: 'Sehr aktiv (6–7× Sport/Woche)' },
 ];
 
+/** Gewicht fürs Profil – sonst der letzte Eintrag aus der früheren Körperwerte-Funktion. */
 async function latestWeight() {
+  const own = getSettingsSync().profile.weightKg;
+  if (own) return own;
   const list = (await entries.byType('body')).filter((e) => e.data.weight != null).sort((a, b) => (a.date < b.date ? 1 : -1));
   return list[0]?.data.weight ?? null;
+}
+
+// ---------- Design ----------
+function designCard() {
+  const s = getSettingsSync();
+  let d = { ...DEFAULT_DESIGN, ...(s.prefs.design || {}) };
+  const save = async (patch) => { d = { ...d, ...patch }; await updateSettings({ prefs: { design: d } }); draw(); };
+  const box = h('div', { class: 'design' });
+  const swatch = (key, p) => {
+    const v = designVars({ ...d, preset: key, accent: null }, 'dark');
+    return h('button', {
+      type: 'button', class: 'swatch' + (d.preset === key && !d.accent ? ' active' : ''), 'aria-label': `Farbschema ${p.label}`,
+      onclick: () => save({ preset: key, accent: null }),
+    },
+    h('span', { class: 'swatch-prev', style: `background:${v['--bg']}` },
+      h('i', { style: `background:${v['--surface-2']}` }), h('b', { style: `background:${p.accent}` })),
+    h('span', { class: 'swatch-label' }, p.label));
+  };
+  const draw = () => {
+    const color = h('input', { type: 'color', class: 'color-input', value: d.accent || PRESETS[d.preset]?.accent || '#3ddc97' });
+    color.addEventListener('input', () => { document.documentElement.style.setProperty('--accent', color.value); });
+    color.addEventListener('change', () => save({ accent: color.value }));
+    const p = PRESETS[d.preset] || PRESETS.mint;
+    box.replaceChildren(
+      field('Hell oder dunkel', segmented([{ value: 'dark', label: 'Dunkel' }, { value: 'light', label: 'Hell' }, { value: 'system', label: 'System' }], getSettingsSync().prefs.theme,
+        async (v) => { await updateSettings({ prefs: { theme: v } }); })),
+      field('Farbschema', h('div', { class: 'swatches' }, Object.entries(PRESETS).map(([k, x]) => swatch(k, x))),
+        d.accent ? 'Eigene Farbe aktiv – tippe ein Schema an, um zurückzuwechseln.' : p.note),
+      field('Eigene Akzentfarbe', h('div', { class: 'color-row' }, color,
+        h('span', { class: 'small muted' }, d.accent ? `Eigene Farbe ${d.accent.toUpperCase()}` : 'Tippen, um frei zu wählen'),
+        d.accent ? h('button', { type: 'button', class: 'btn small', onclick: () => save({ accent: null }) }, 'Zurücksetzen') : null)),
+      field('Form', segmented(Object.entries(SHAPES).map(([k, x]) => ({ value: k, label: x.label })), d.shape, (v) => save({ shape: v }))),
+      field('Schrift', h('div', { class: 'chips' }, Object.entries(FONTS).map(([k, x]) => h('button', {
+        type: 'button', class: 'chip' + (d.font === k ? ' active' : ''), style: `font-family:${x.stack}`, onclick: () => save({ font: k }),
+      }, x.label)))),
+      h('div', { class: 'design-preview' },
+        h('strong', null, 'Vorschau'),
+        h('p', { class: 'small muted' }, '“May the Force be with you.”'),
+        h('div', { class: 'btn-row' }, h('button', { type: 'button', class: 'btn btn-primary small' }, 'Knopf'), h('span', { class: 'chip active' }, 'Auswahl'))),
+      h('button', { type: 'button', class: 'btn btn-ghost small', onclick: () => save({ ...DEFAULT_DESIGN }) }, 'Design zurücksetzen'));
+  };
+  draw();
+  return card('Design', { iconName: 'star', cls: 'anchor-design' }, box);
 }
 
 /** Richtwert nach Mifflin-St Jeor; für Muskelaufbau +300 kcal, Protein 1,8 g/kg. */
@@ -37,10 +83,16 @@ function suggest({ weight, heightCm, age, sex, activity }) {
 async function render(el, ctx) {
   const s = getSettingsSync();
   const saved = (msg = 'Gespeichert') => { toast(msg); ctx.refresh(); };
-  el.append(pageHeader('Einstellungen'));
+  el.append(pageHeader('Einstellungen', {
+    actions: h('a', { class: 'icon-btn', href: '#/heute', 'aria-label': 'Zur Startseite' }, icon('x')),
+  }));
+
+  // ----- Design -----
+  el.append(designCard());
 
   // ----- Profil -----
   const name = textInput({ value: s.profile.name, placeholder: 'Wie soll ich dich nennen?', maxlength: 40 });
+  const weight = numInput({ value: s.profile.weightKg, placeholder: 'kg' });
   const height = intInput({ value: s.profile.heightCm, placeholder: 'cm' });
   const birth = intInput({ value: s.profile.birthYear, placeholder: 'z. B. 1995' });
   const sex = select([{ value: '', label: '–' }, { value: 'm', label: 'männlich' }, { value: 'w', label: 'weiblich' }], s.profile.sex);
@@ -48,28 +100,27 @@ async function render(el, ctx) {
   el.append(card('Profil', { iconName: 'home', cls: 'anchor-profil' },
     field('Name', name),
     h('div', { class: 'grid-2' }, field('Größe', withUnit(height, 'cm')), field('Geburtsjahr', birth)),
+    field('Gewicht (für den Kalorien-Richtwert)', withUnit(weight, 'kg')),
     field('Geschlecht (für den Kalorien-Richtwert)', sex),
     field('Aktivität im Alltag', activity),
     h('button', {
       class: 'btn btn-primary',
       onclick: async () => {
-        await updateSettings({ profile: { name: name.value.trim(), heightCm: readNum(height), birthYear: readNum(birth), sex: sex.value, activity: Number(activity.value) } });
+        await updateSettings({ profile: { name: name.value.trim(), heightCm: readNum(height), birthYear: readNum(birth), sex: sex.value, activity: Number(activity.value), weightKg: readNum(weight) } });
         saved();
       },
     }, 'Profil speichern')));
 
   // ----- Ziele -----
-  const wGoal = numInput({ value: s.targets.weightGoal, placeholder: 'kg' });
   const kcal = intInput({ value: s.targets.kcal, placeholder: 'kcal' });
   const protein = intInput({ value: s.targets.protein, placeholder: 'g' });
-  const sleep = numInput({ value: s.targets.sleepH, placeholder: 'h' });
   const calcBox = h('div');
   const calc = async () => {
     const weight = await latestWeight();
     const age = s.profile.birthYear ? new Date().getFullYear() - s.profile.birthYear : null;
     const r = suggest({ weight, heightCm: s.profile.heightCm, age, sex: s.profile.sex, activity: s.profile.activity });
     if (!r) {
-      calcBox.replaceChildren(h('p', { class: 'muted small' }, 'Für einen Vorschlag brauche ich Größe, Geburtsjahr und Geschlecht (Profil) sowie ein eingetragenes Gewicht.'));
+      calcBox.replaceChildren(h('p', { class: 'muted small' }, 'Für einen Vorschlag brauche ich Größe, Geburtsjahr, Geschlecht und Gewicht (Profil).'));
       return;
     }
     calcBox.replaceChildren(h('div', { class: 'banner' }, icon('info'),
@@ -78,53 +129,20 @@ async function render(el, ctx) {
         h('div', { class: 'small muted' }, `Erhaltungsbedarf ca. ${fmtInt(r.tdee)} kcal + 300 kcal für Muskelaufbau, 1,8 g Protein je kg (${fmt(weight)} kg). Grober Richtwert – passe ihn an deinen Verlauf an.`)),
       h('button', { class: 'btn small', onclick: () => { kcal.value = r.kcal; protein.value = r.protein; toast('Übernommen – bitte speichern'); } }, 'Übernehmen')));
   };
-  el.append(card('Ziele', { iconName: 'trophy', cls: 'anchor-ziele' },
+  el.append(card('Kochen: Kalorien & Protein', { iconName: 'food', cls: 'anchor-ziele' },
     h('div', { class: 'grid-2' },
-      field('Zielgewicht', withUnit(wGoal, 'kg')),
       field('Kalorien pro Tag', withUnit(kcal, 'kcal')),
-      field('Protein pro Tag', withUnit(protein, 'g')),
-      field('Schlaf', withUnit(sleep, 'h'))),
+      field('Protein pro Tag', withUnit(protein, 'g'))),
     h('button', { class: 'btn btn-ghost small', onclick: calc }, icon('info', 18), 'Richtwert für Kalorien & Protein berechnen'),
     calcBox,
-    h('p', { class: 'muted small' }, 'Kalorien und Protein nutzt der Wochenplan als Richtwert (kein Tracking). Schlaf = Tagesziel; leer lassen = kein Ziel.'),
+    h('p', { class: 'muted small' }, 'Der Wochenplan beim Kochen nutzt diese Werte als Richtwert (kein Tracking).'),
     h('button', {
       class: 'btn btn-primary',
       onclick: async () => {
-        await updateSettings({ targets: { weightGoal: readNum(wGoal), kcal: readNum(kcal), protein: readNum(protein), sleepH: readNum(sleep) } });
-        saved();
-      },
-    }, 'Ziele speichern')));
-
-  // ----- Tagesziele & Serien -----
-  const weigh = checkbox('Wiegen als tägliches Ziel zählen (optional)', s.prefs.weighDaily);
-  const thr = intInput({ value: s.prefs.streakThreshold });
-  const mChips = h('div', { class: 'chips' });
-  let mSel = [...s.prefs.measureFields];
-  const renderM = () => mChips.replaceChildren(...Object.entries(MEASURES).map(([k, label]) => h('button', {
-    type: 'button', class: 'chip' + (mSel.includes(k) ? ' active' : ''),
-    onclick: () => { mSel = mSel.includes(k) ? mSel.filter((x) => x !== k) : [...mSel, k]; renderM(); },
-  }, label)));
-  renderM();
-  el.append(card('Tagesziele & Serien', { iconName: 'flame' },
-    weigh,
-    field('Serie zählt ab', withUnit(thr, '%'), 'erfüllter Tagesziele'),
-    field('Umfänge, die du messen willst', mChips),
-    h('button', {
-      class: 'btn btn-primary',
-      onclick: async () => {
-        await updateSettings({ prefs: {
-          weighDaily: weigh.input.checked,
-          streakThreshold: Math.min(100, Math.max(10, readNum(thr) ?? 80)),
-          measureFields: Object.keys(MEASURES).filter((k) => mSel.includes(k)),
-        } });
+        await updateSettings({ targets: { kcal: readNum(kcal), protein: readNum(protein) } });
         saved();
       },
     }, 'Speichern')));
-
-  // ----- Darstellung -----
-  el.append(card('Darstellung', { iconName: 'settings' },
-    segmented([{ value: 'dark', label: 'Dunkel' }, { value: 'light', label: 'Hell' }, { value: 'system', label: 'System' }], s.prefs.theme,
-      async (v) => { await updateSettings({ prefs: { theme: v } }); })));
 
   // ----- Erinnerungen -----
   el.append(await reminderCard(ctx));
@@ -188,7 +206,7 @@ async function render(el, ctx) {
 }
 
 // ---------- Erinnerungen ----------
-const REMINDER_TIMES = '7:30 Uhr (Tagesüberblick) und 20:30 Uhr (was noch offen ist)';
+const REMINDER_TIMES = '7:30 Uhr (Essen des Tages, Film für heute Abend) und 20:30 Uhr';
 
 async function reminderCard(ctx) {
   const c = card('Erinnerungen (Push)', { iconName: 'bell', cls: 'anchor-push' });
@@ -200,7 +218,7 @@ async function reminderCard(ctx) {
   const test = (slot) => async () => {
     try { await testNotification(slot); toast('Test-Benachrichtigung gesendet'); } catch (err) { toast(err.message); }
   };
-  c.append(h('p', { class: 'muted small' }, `Mathub erinnert dich täglich um ${REMINDER_TIMES}. Der Text entsteht auf deinem Handy aus deinen Tageszielen – GitHub sendet nur ein leeres Wecksignal.`));
+  c.append(h('p', { class: 'muted small' }, `Mathub erinnert dich täglich um ${REMINDER_TIMES}. Der Text entsteht auf deinem Handy – ohne Plan gibt’s einen Spruch. GitHub sendet nur ein leeres Wecksignal.`));
 
   if (st.status === 'denied') {
     c.append(h('div', { class: 'banner warn small' }, icon('info'), h('span', null, 'Benachrichtigungen sind für Mathub blockiert. Chrome → ⋮ → Einstellungen → Website-Einstellungen → Benachrichtigungen → mtahieu.github.io erlauben.')));
@@ -297,8 +315,7 @@ registerModule({
   id: 'settings',
   area: 'hub',
   title: 'Einstellungen',
-  description: 'Profil, Ziele, Backup',
+  description: 'Design, Profil, Backup',
   order: 95,
-  nav: { more: 9, icon: 'settings' },
   routes: [{ path: '/einstellungen', render }],
 });

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 – 2026-11-28
+
+- **Mathub neu aufgestellt:** Unten gibt es nur noch **Home, Filme und Kochen**. Schlaf, Körperwerte, Supplements, Job, Fortschritt, Monatsübersicht und „Mehr“ sind entfernt – früher eingetragene Daten bleiben in der Datenbank und im Backup erhalten, werden aber nicht mehr angezeigt.
+- **Neue Startseite:** Begrüßung je nach Tageszeit und bei jedem App-Start ein neues englisches Filmzitat oder ein alberner Spruch (nie zweimal hintereinander derselbe). Zahnrad oben rechts → Einstellungen.
+- **Design frei wählbar** (Einstellungen → Design): 9 Farbschemata als Vorschläge – Mint, Kino, Popcorn, Ozean, Lavendel, Neon, Retro, Wald, Tomate – oder eine eigene Akzentfarbe; dazu Hell/Dunkel/System, Form (rund, extra weich, kantig) und Schrift (modern, klassisch, Schreibmaschine, verspielt). Änderungen wirken sofort.
+- **Ernährung heißt jetzt „Kochen“.** Rezepte zeigen **echte Fotos der Gerichte** von Wikipedia/Wikimedia Commons (frei lizenziert, gebündelt geladen und offline gespeichert); ohne Netz bleibt die Illustration. Die Quelle steht im Rezept.
+- **Erinnerungen** zeigen morgens das Essen des Tages und den Film für heute Abend, sonst einen Spruch.
+- Einstellungen aufgeräumt: Gewicht fürs Profil (für den Kalorien-Richtwert), Ziele nur noch Kalorien & Protein fürs Kochen.
+- Keine Datenmigration nötig.
+
 ## 0.12.0 – 2026-11-28
 
 - **Gemeinsame Filmliste über Google Drive:** Jede Person meldet sich in ihrer App mit dem eigenen Google-Konto an; die Liste liegt als Datei in einem geteilten Drive-Ordner. Neue Filme, Gesehen-Haken, Bewertungen, Notizen, Löschungen und „Heute Abend“ sind nach wenigen Sekunden bei allen. Einrichtung unter Filme → ☁️: einmalig Client-ID anlegen, Liste erstellen, Einladungslink teilen – die anderen öffnen nur den Link.
